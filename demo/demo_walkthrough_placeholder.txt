@@ -1,0 +1,1 @@
+Use ffmpeg to stitch screenshots into mp4 if binary media cannot be committed.

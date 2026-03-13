@@ -1,0 +1,17 @@
+{
+  "users": [
+    {"name": "Manager Bob", "email": "manager@example.com", "role": "manager"},
+    {"name": "Employee Alice", "email": "alice@example.com", "role": "employee"},
+    {"name": "Employee Evan", "email": "evan@example.com", "role": "employee"}
+  ],
+  "goals": [
+    "Read 12 Rules for Life",
+    "Python Architecture Certification",
+    "Deliver team workshop",
+    "Lead sprint planning",
+    "Mentor new hire",
+    "Improve public speaking",
+    "Complete managerial coaching",
+    "Quarterly performance reviews"
+  ]
+}

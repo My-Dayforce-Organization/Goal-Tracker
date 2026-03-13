@@ -27,3 +27,7 @@ class FeedbackCreate(BaseModel):
     manager_id: int
     employee_id: int
     text: str
+
+
+class NLConfirmRequest(BaseModel):
+    confirm: bool = True

@@ -9,7 +9,7 @@ def setup_module():
     run()
 
 
-def test_nl_ingest_idempotency_and_progress_update():
+def test_nl_ingest_preview_confirm_and_idempotency():
     c = TestClient(app)
     payload = {
         'user_id': 2,
@@ -20,7 +20,12 @@ def test_nl_ingest_idempotency_and_progress_update():
     r1 = c.post('/nl/ingest', headers={'idempotency-token': 'idem-1'}, json=payload)
     assert r1.status_code == 200
     data = r1.json()
+    assert data['status'] == 'pending_confirm'
     assert data['confidence'] >= 0.7
+
+    confirm = c.post(f"/nl/ingest/{data['nl_event_id']}/confirm", params={'requester_id': 2}, json={'confirm': True})
+    assert confirm.status_code == 200
+    assert confirm.json()['status'] in {'confirmed', 'already_confirmed'}
 
     r2 = c.post('/nl/ingest', headers={'idempotency-token': 'idem-1'}, json=payload)
     assert r2.json()['status'] in {'duplicate', 'deduped'}

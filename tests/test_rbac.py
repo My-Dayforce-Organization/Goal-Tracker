@@ -19,3 +19,10 @@ def test_manager_can_view_report_goals():
     c = TestClient(app)
     r = c.get('/users/2/goals', params={'requester_id': 1})
     assert r.status_code == 200
+
+
+def test_manager_can_view_direct_reports():
+    c = TestClient(app)
+    r = c.get('/users/1/reports', params={'requester_id': 1})
+    assert r.status_code == 200
+    assert len(r.json()) >= 2

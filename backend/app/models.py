@@ -38,6 +38,8 @@ class NLEvent(SQLModel, table=True):
     text_hash: str
     matched_goal_id: Optional[int] = None
     confidence: float = 0
+    preview: str = ""
+    confirmed: bool = False
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 

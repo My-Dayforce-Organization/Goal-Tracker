@@ -1,8 +1,16 @@
+from datetime import date
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlmodel import Session, select
 from .database import get_session
 from .models import User, Goal, Milestone, NLEvent, AuditLog, Feedback, Notification
-from .schemas import LoginRequest, GoalCreate, MilestoneCreate, NLIngestRequest, FeedbackCreate
+from .schemas import (
+    LoginRequest,
+    GoalCreate,
+    MilestoneCreate,
+    NLIngestRequest,
+    FeedbackCreate,
+    NLConfirmRequest,
+)
 from backend.services.nlp import MockNLPService, content_hash
 
 router = APIRouter()
@@ -42,6 +50,14 @@ def get_user(id: int, requester_id: int = Query(...), session: Session = Depends
     if not user:
         raise HTTPException(404, "not found")
     return user
+
+
+@router.get('/users/{id}/reports')
+def direct_reports(id: int, requester_id: int = Query(...), session: Session = Depends(get_session)):
+    requester = _get_requester(requester_id, session)
+    if requester.role != "manager" or requester.id != id:
+        raise HTTPException(403, "manager only")
+    return session.exec(select(User).where(User.manager_id == id)).all()
 
 
 @router.get('/users/{id}/goals')
@@ -90,8 +106,9 @@ def delete_goal(id: int, requester_id: int = Query(...), session: Session = Depe
         raise HTTPException(404, "not found")
     if not _can_access(requester, goal.user_id, session):
         raise HTTPException(403, "forbidden")
-    session.delete(goal)
-    session.add(AuditLog(user_id=requester.id, action="delete", entity="goal", entity_id=id, diff="{}"))
+    goal.status = "deleted"
+    session.add(goal)
+    session.add(AuditLog(user_id=requester.id, action="soft_delete", entity="goal", entity_id=id, diff="{}"))
     session.commit()
     return {"deleted": True}
 
@@ -122,24 +139,67 @@ def add_milestone(id: int, payload: MilestoneCreate, requester_id: int = Query(.
 def ingest_nl(payload: NLIngestRequest, idempotency_token: str = Header(...), session: Session = Depends(get_session)):
     existing = session.exec(select(NLEvent).where(NLEvent.client_event_id == payload.client_event_id)).first()
     if existing:
-        return {"status": "duplicate", "nl_event_id": existing.id}
+        return {
+            "status": "duplicate",
+            "nl_event_id": existing.id,
+            "preview": existing.preview,
+            "confidence": existing.confidence,
+            "suggested_goal_id": existing.matched_goal_id,
+        }
     digest = content_hash(payload.user_id, payload.text)
-    by_hash = session.exec(select(NLEvent).where(NLEvent.text_hash == digest)).first()
+    by_hash = session.exec(select(NLEvent).where(NLEvent.text_hash == digest, NLEvent.user_id == payload.user_id)).first()
     if by_hash:
-        return {"status": "deduped", "nl_event_id": by_hash.id}
-    goals = session.exec(select(Goal).where(Goal.user_id == payload.user_id)).all()
+        return {
+            "status": "deduped",
+            "nl_event_id": by_hash.id,
+            "preview": by_hash.preview,
+            "confidence": by_hash.confidence,
+            "suggested_goal_id": by_hash.matched_goal_id,
+        }
+    goals = session.exec(select(Goal).where(Goal.user_id == payload.user_id, Goal.status != "deleted")).all()
     candidate = goals[0] if goals else None
     parsed = MockNLPService().parse(payload.text)
-    event = NLEvent(user_id=payload.user_id, client_event_id=payload.client_event_id, idempotency_token=idempotency_token, text=payload.text, text_hash=digest, matched_goal_id=candidate.id if candidate else None, confidence=parsed.confidence)
+    event = NLEvent(
+        user_id=payload.user_id,
+        client_event_id=payload.client_event_id,
+        idempotency_token=idempotency_token,
+        text=payload.text,
+        text_hash=digest,
+        matched_goal_id=candidate.id if candidate else None,
+        confidence=parsed.confidence,
+        preview=parsed.summary,
+    )
     session.add(event)
-    if candidate:
-        candidate.progress = max(candidate.progress, 52)
-        session.add(candidate)
     session.commit()
     session.refresh(event)
-    session.add(AuditLog(user_id=payload.user_id, action="nl_ingest", entity="nl_event", entity_id=event.id, diff=payload.model_dump_json()))
+    session.add(AuditLog(user_id=payload.user_id, action="nl_preview", entity="nl_event", entity_id=event.id, diff=payload.model_dump_json()))
     session.commit()
-    return {"status": "ok", "preview": parsed.summary, "confidence": parsed.confidence, "suggested_goal_id": event.matched_goal_id, "nl_event_id": event.id}
+    return {"status": "pending_confirm", "preview": parsed.summary, "confidence": parsed.confidence, "suggested_goal_id": event.matched_goal_id, "nl_event_id": event.id}
+
+
+@router.post('/nl/ingest/{event_id}/confirm')
+def confirm_ingest(event_id: int, payload: NLConfirmRequest, requester_id: int = Query(...), session: Session = Depends(get_session)):
+    event = session.get(NLEvent, event_id)
+    requester = _get_requester(requester_id, session)
+    if not event or event.user_id != requester.id:
+        raise HTTPException(404, "event not found")
+    if not payload.confirm:
+        session.delete(event)
+        session.add(AuditLog(user_id=requester.id, action="nl_rejected", entity="nl_event", entity_id=event_id, diff="{}"))
+        session.commit()
+        return {"status": "discarded"}
+    if event.confirmed:
+        return {"status": "already_confirmed"}
+    event.confirmed = True
+    session.add(event)
+    if event.matched_goal_id:
+        goal = session.get(Goal, event.matched_goal_id)
+        if goal:
+            goal.progress = max(goal.progress, 52)
+            session.add(goal)
+    session.add(AuditLog(user_id=requester.id, action="nl_confirmed", entity="nl_event", entity_id=event_id, diff='{"progress":52}'))
+    session.commit()
+    return {"status": "confirmed", "updated_progress": 52}
 
 
 @router.post('/goals/{id}/approve')
@@ -167,13 +227,19 @@ def feedback(payload: FeedbackCreate, requester_id: int = Query(...), session: S
 @router.get('/dashboard')
 def dashboard(range: str = Query("monthly"), requester_id: int = Query(...), session: Session = Depends(get_session)):
     requester = _get_requester(requester_id, session)
-    goals = session.exec(select(Goal).where(Goal.user_id == requester.id)).all()
+    goals = session.exec(select(Goal).where(Goal.user_id == requester.id, Goal.status != "deleted")).all()
+    overdue_goals = 0
+    today = date.today().isoformat()
+    for g in goals:
+        if g.target_date and g.target_date < today and g.progress < 100:
+            overdue_goals += 1
     return {
         "range": range,
         "kpis": {
             "goal_count": len(goals),
             "completion_rate": (sum(g.progress for g in goals) / len(goals)) if goals else 0,
-            "overdue_goals": len([g for g in goals if g.status == "overdue"]),
+            "overdue_goals": overdue_goals,
+            "high_priority": len([g for g in goals if g.priority == "high"]),
         }
     }
 
@@ -187,7 +253,7 @@ def export_report(redact_pii: bool = True, justification: str | None = None, req
         raise HTTPException(400, "justification required")
     session.add(AuditLog(user_id=requester.id, action="export", entity="report", entity_id=0, diff=f'{{"redact":{str(redact_pii).lower()}}}'))
     session.commit()
-    return {"csv": "id,title,progress"}
+    return {"csv": "id,title,progress", "redact_pii": redact_pii}
 
 
 @router.get('/notifications')

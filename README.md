@@ -49,6 +49,15 @@ npm install
 npm run dev -- --host 0.0.0.0 --port 5173
 ```
 
+
+## Implemented functional scope (current)
+- Role switcher demo for employee/manager personas (seeded users).
+- Dashboard KPIs with monthly/quarterly/yearly selector.
+- Goal CRUD (create + list in UI; backend supports update/delete soft-delete).
+- NL ingestion preview flow with confirm/discard and 10-second undo buffer in UI.
+- Manager direct-reports panel.
+- Backend endpoints for `/nl/ingest`, `/nl/ingest/{id}/confirm`, `/users/{id}/reports`, export audit logging, and notifications.
+
 ## Demo
 - Demo page: `demo/index.html`
 - Transcript: `demo/transcript.md`

@@ -1,222 +1,156 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import ReactDOM from 'react-dom/client'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 
-type User = { id: number; name: string; role: string }
-type Goal = { id: number; title: string; progress: number; priority: string; status: string }
-type Dashboard = { range: string; kpis: { goal_count: number; completion_rate: number; overdue_goals: number; high_priority: number } }
+type Priority = 'high' | 'medium' | 'low'
 
-const API = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'
-const RANGE_OPTIONS = ['monthly', 'quarterly', 'yearly'] as const
+type GoalCard = {
+  id: number
+  title: string
+  priority: Priority
+  category: string
+  timeline: string
+  progress: number
+  daysLeft: number
+  behindBy: number
+}
 
-const seededUsers: User[] = [
-  { id: 1, name: 'Manager Bob', role: 'manager' },
-  { id: 2, name: 'Employee Alice', role: 'employee' },
-  { id: 3, name: 'Employee Evan', role: 'employee' },
+const goals: GoalCard[] = [
+  { id: 1, title: 'Learn a Programming Language', priority: 'high', category: 'Learning', timeline: '3 - 6 months', progress: 0, daysLeft: 108, behindBy: 40 },
+  { id: 2, title: 'Read 25 books', priority: 'medium', category: 'Personal', timeline: '1 year', progress: 0, daysLeft: 293, behindBy: 20 },
+  { id: 3, title: 'Launch consulting profile', priority: 'medium', category: 'Work', timeline: '< 3 months', progress: 22, daysLeft: 54, behindBy: 10 },
+  { id: 4, title: 'Improve cardio health', priority: 'low', category: 'Health', timeline: '6 months', progress: 72, daysLeft: 146, behindBy: 0 },
 ]
 
-const colors = ['#0ea5e9', '#22c55e', '#f97316', '#ef4444']
+const badgeGradient: Record<Priority, string> = {
+  high: 'linear-gradient(135deg, #ff3d5a, #db2cb8)',
+  medium: 'linear-gradient(135deg, #ffcd29, #ff7a18)',
+  low: 'linear-gradient(135deg, #36d399, #18b6c9)',
+}
 
 function App() {
-  const [currentUser, setCurrentUser] = useState<User>(seededUsers[1])
-  const [goals, setGoals] = useState<Goal[]>([])
-  const [dashboard, setDashboard] = useState<Dashboard | null>(null)
-  const [range, setRange] = useState<(typeof RANGE_OPTIONS)[number]>('monthly')
-  const [newGoalTitle, setNewGoalTitle] = useState('')
-  const [nlText, setNlText] = useState('I completed reading 12 Rules for Life today')
-  const [preview, setPreview] = useState<{ id: number; text: string; confidence: number } | null>(null)
-  const [undoTimer, setUndoTimer] = useState<number>(10)
-  const [reports, setReports] = useState<User[]>([])
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'plan' | 'systems' | 'add'>('dashboard')
 
-  async function api<T>(path: string, options?: RequestInit): Promise<T> {
-    const res = await fetch(`${API}${path}`, options)
-    if (!res.ok) throw new Error(await res.text())
-    return res.json()
-  }
-
-  async function loadGoals(userId: number) {
-    const data = await api<Goal[]>(`/users/${userId}/goals?requester_id=${currentUser.id}`)
-    setGoals(data.filter((g) => g.status !== 'deleted'))
-  }
-
-  async function loadDashboard() {
-    const data = await api<Dashboard>(`/dashboard?requester_id=${currentUser.id}&range=${range}`)
-    setDashboard(data)
-  }
-
-  async function loadReports() {
-    if (currentUser.role !== 'manager') {
-      setReports([])
-      return
-    }
-    const data = await api<User[]>(`/users/${currentUser.id}/reports?requester_id=${currentUser.id}`)
-    setReports(data)
-  }
-
-  useEffect(() => {
-    loadGoals(currentUser.id).catch(() => setGoals([]))
-    loadDashboard().catch(() => setDashboard(null))
-    loadReports().catch(() => setReports([]))
-  }, [currentUser, range])
-
-  useEffect(() => {
-    if (!preview) return
-    setUndoTimer(10)
-    const handle = window.setInterval(() => setUndoTimer((s) => (s <= 1 ? 0 : s - 1)), 1000)
-    return () => window.clearInterval(handle)
-  }, [preview])
-
-  async function createGoal() {
-    if (!newGoalTitle.trim()) return
-    await api('/goals?requester_id=' + currentUser.id, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: currentUser.id, title: newGoalTitle, priority: 'medium' }),
-    })
-    setNewGoalTitle('')
-    loadGoals(currentUser.id)
-    loadDashboard()
-  }
-
-  async function ingestNl() {
-    const payload = {
-      user_id: currentUser.id,
-      client_event_id: `evt-${Date.now()}`,
-      text: nlText,
-      source: 'web',
-    }
-    const data = await api<{ nl_event_id: number; preview: string; confidence: number }>('/nl/ingest', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'idempotency-token': `idem-${Date.now()}` },
-      body: JSON.stringify(payload),
-    })
-    setPreview({ id: data.nl_event_id, text: data.preview, confidence: data.confidence })
-  }
-
-  async function confirmNl(confirm: boolean) {
-    if (!preview) return
-    await api(`/nl/ingest/${preview.id}/confirm?requester_id=${currentUser.id}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ confirm }),
-    })
-    setPreview(null)
-    loadGoals(currentUser.id)
-    loadDashboard()
-  }
-
-  const monthlyData = useMemo(
-    () => goals.map((g) => ({ name: g.title.length > 14 ? g.title.slice(0, 14) + '…' : g.title, progress: g.progress })),
-    [goals],
-  )
-
-  const statusData = useMemo(() => {
-    const active = goals.filter((g) => g.progress < 100).length
-    const done = goals.filter((g) => g.progress >= 100).length
-    return [
-      { name: 'Active', value: active },
-      { name: 'Completed', value: done },
-    ]
-  }, [goals])
+  const counts = useMemo(() => {
+    const high = goals.filter((g) => g.priority === 'high').length
+    const medium = goals.filter((g) => g.priority === 'medium').length
+    const low = goals.filter((g) => g.priority === 'low').length
+    return { high, medium, low }
+  }, [])
 
   return (
-    <main style={{ maxWidth: 1100, margin: '0 auto', padding: 16, fontFamily: 'Inter, Arial, sans-serif' }}>
-      <h1>Goal Tracker Dashboard</h1>
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginBottom: 16 }}>
-        <label>
-          User:
-          <select value={currentUser.id} onChange={(e) => setCurrentUser(seededUsers.find((u) => u.id === Number(e.target.value)) || seededUsers[1])} style={{ marginLeft: 8 }}>
-            {seededUsers.map((u) => (
-              <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          View:
-          <select value={range} onChange={(e) => setRange(e.target.value as any)} style={{ marginLeft: 8 }}>
-            {RANGE_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
-          </select>
-        </label>
-      </div>
-
-      <section aria-label="kpi cards" style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', marginBottom: 18 }}>
-        <Kpi title="Goals" value={dashboard?.kpis.goal_count ?? goals.length} />
-        <Kpi title="Completion %" value={(dashboard?.kpis.completion_rate ?? 0).toFixed(1)} />
-        <Kpi title="Overdue" value={dashboard?.kpis.overdue_goals ?? 0} />
-        <Kpi title="High Priority" value={dashboard?.kpis.high_priority ?? goals.filter((g) => g.priority === 'high').length} />
-      </section>
-
-      <section style={{ marginBottom: 18 }}>
-        <h2>Natural language update</h2>
-        <textarea value={nlText} onChange={(e) => setNlText(e.target.value)} rows={3} style={{ width: '100%' }} />
-        <button onClick={ingestNl}>Parse update</button>
-        {preview && (
-          <div aria-live="polite" style={{ marginTop: 8, border: '1px solid #ddd', padding: 8, borderRadius: 8 }}>
-            <strong>Preview:</strong> {preview.text} (confidence {preview.confidence.toFixed(2)})
-            <div style={{ marginTop: 8 }}>
-              <button onClick={() => confirmNl(true)}>Confirm</button>{' '}
-              <button onClick={() => confirmNl(false)}>Discard</button>{' '}
-              <span>Undo buffer: {undoTimer}s</span>
-            </div>
+    <main style={styles.page}>
+      <div style={styles.phoneShell}>
+        <header style={styles.header}>
+          <div>
+            <h1 style={styles.title}>2026 Plan</h1>
+            <p style={styles.sub}>💾 Saved to local device</p>
           </div>
-        )}
-      </section>
+          <div style={styles.icons}>☀️ 👤 ⚙️</div>
+        </header>
 
-      <section style={{ display: 'grid', gap: 16, gridTemplateColumns: '2fr 1fr', marginBottom: 18 }}>
-        <div style={{ height: 280, border: '1px solid #eee', borderRadius: 8, padding: 8 }}>
-          <ResponsiveContainer>
-            <BarChart data={monthlyData}>
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="progress" fill="#0ea5e9" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-        <div style={{ height: 280, border: '1px solid #eee', borderRadius: 8, padding: 8 }}>
-          <ResponsiveContainer>
-            <PieChart>
-              <Pie data={statusData} dataKey="value" nameKey="name" outerRadius={90}>
-                {statusData.map((_, i) => <Cell key={i} fill={colors[i]} />)}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </section>
-
-      <section>
-        <h2>Goals</h2>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-          <input value={newGoalTitle} onChange={(e) => setNewGoalTitle(e.target.value)} placeholder="New goal title" />
-          <button onClick={createGoal}>Add goal</button>
-        </div>
-        <ul>
-          {goals.map((goal) => (
-            <li key={goal.id} style={{ marginBottom: 8 }}>
-              <strong>{goal.title}</strong> — {goal.progress}% — {goal.priority}
-            </li>
+        <nav style={styles.nav}>
+          {[
+            ['dashboard', 'Dashboard'],
+            ['plan', 'My Plan'],
+            ['systems', 'My Systems'],
+            ['add', 'Add'],
+          ].map(([id, label]) => (
+            <button key={id} onClick={() => setActiveTab(id as any)} style={{ ...styles.tabBtn, ...(activeTab === id ? styles.tabBtnActive : {}) }}>
+              {label}
+            </button>
           ))}
-        </ul>
-      </section>
+        </nav>
 
-      {currentUser.role === 'manager' && (
-        <section>
-          <h2>Direct reports</h2>
-          <ul>{reports.map((r) => <li key={r.id}>{r.name}</li>)}</ul>
+        <section style={styles.panel}>
+          <h2 style={styles.panelTitle}>Yearly Overview</h2>
+          <p style={styles.sub}>Interactive analytics of your milestones.</p>
+
+          <div style={{ ...styles.priorityCard, background: badgeGradient.high }}>
+            <div>
+              <strong style={styles.priorityTitle}>High Priority</strong>
+              <p style={styles.prioritySubtitle}>Must achieve goals</p>
+              <span style={styles.pill}>VIEW DETAILS</span>
+            </div>
+            <span style={styles.priorityCount}>{counts.high}</span>
+          </div>
+
+          <div style={{ ...styles.priorityCard, background: badgeGradient.medium }}>
+            <div>
+              <strong style={styles.priorityTitle}>Medium Priority</strong>
+              <p style={styles.prioritySubtitle}>Steady progress needed</p>
+              <span style={styles.pill}>VIEW DETAILS</span>
+            </div>
+            <span style={styles.priorityCount}>{counts.medium}</span>
+          </div>
+
+          <div style={{ ...styles.priorityCard, background: badgeGradient.low }}>
+            <div>
+              <strong style={styles.priorityTitle}>Low Priority</strong>
+              <p style={styles.prioritySubtitle}>Good to have</p>
+              <span style={styles.pill}>VIEW DETAILS</span>
+            </div>
+            <span style={styles.priorityCount}>{counts.low}</span>
+          </div>
         </section>
-      )}
+
+        <section style={styles.panel}>
+          <h2 style={styles.panelTitle}>Goal Progress Tracker</h2>
+          {goals.map((goal) => (
+            <article key={goal.id} style={styles.goalCard}>
+              <div style={styles.goalTopRow}>
+                <span style={styles.behind}>↘ Behind</span>
+                <span style={styles.priorityChip}>{goal.priority}</span>
+                <span style={styles.daysLeft}>{goal.daysLeft} days left</span>
+              </div>
+              <h3 style={styles.goalTitle}>{goal.title}</h3>
+              <div style={styles.goalTopRow}>
+                <span style={styles.progressLabel}>PROGRESS {goal.progress}%</span>
+                <span style={styles.progressLag}>-{goal.behindBy}% Behind</span>
+              </div>
+              <div style={styles.track}><div style={{ ...styles.fill, width: `${goal.progress}%` }} /></div>
+              <p style={styles.meta}>{goal.category} • {goal.timeline}</p>
+            </article>
+          ))}
+        </section>
+      </div>
     </main>
   )
 }
 
-function Kpi({ title, value }: { title: string; value: string | number }) {
-  return (
-    <div style={{ border: '1px solid #eee', borderRadius: 8, padding: 10, background: '#fafafa' }}>
-      <div style={{ fontSize: 12, color: '#64748b' }}>{title}</div>
-      <div style={{ fontSize: 20, fontWeight: 700 }}>{value}</div>
-    </div>
-  )
+const styles: Record<string, React.CSSProperties> = {
+  page: {
+    minHeight: '100vh',
+    background: 'radial-gradient(circle at 10% 20%, #09203f 0%, #020617 45%, #01030a 100%)',
+    color: '#e2e8f0',
+    padding: 20,
+    fontFamily: 'Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial',
+  },
+  phoneShell: { maxWidth: 860, margin: '0 auto' },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0 14px', borderBottom: '1px solid #1e293b' },
+  title: { margin: 0, fontSize: 46, fontWeight: 800, background: 'linear-gradient(90deg,#0ea5e9,#ec4899)', WebkitBackgroundClip: 'text', color: 'transparent' },
+  sub: { margin: '6px 0 0', color: '#94a3b8' },
+  icons: { fontSize: 24, letterSpacing: 8 },
+  nav: { display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, margin: '18px 0' },
+  tabBtn: { background: '#1e293b', color: '#94a3b8', border: '1px solid #334155', borderRadius: 14, padding: '12px 10px', fontWeight: 700 },
+  tabBtnActive: { background: '#0ea5e9', color: '#f8fafc' },
+  panel: { background: 'rgba(2, 6, 23, 0.72)', border: '1px solid #233047', borderRadius: 20, padding: 18, marginBottom: 16, boxShadow: '0 20px 45px rgba(14, 165, 233, 0.12)' },
+  panelTitle: { margin: '0 0 8px', fontSize: 40, color: '#f8fafc' },
+  priorityCard: { borderRadius: 24, padding: '20px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'white', marginTop: 12 },
+  priorityTitle: { fontSize: 30, display: 'block' },
+  prioritySubtitle: { margin: '6px 0 12px', fontSize: 24, opacity: 0.95 },
+  priorityCount: { fontSize: 64, fontWeight: 800 },
+  pill: { display: 'inline-block', borderRadius: 999, padding: '8px 16px', fontSize: 17, fontWeight: 700, background: 'rgba(255,255,255,0.24)' },
+  goalCard: { border: '1px solid #334155', borderLeft: '6px solid #ff4d79', borderRadius: 18, padding: 14, marginBottom: 12, background: 'rgba(5, 10, 32, 0.95)' },
+  goalTopRow: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  behind: { background: '#4c1026', color: '#fda4af', border: '1px solid #9f1239', borderRadius: 999, padding: '4px 10px', fontSize: 14, fontWeight: 700 },
+  priorityChip: { background: '#3f2b0f', color: '#fcd34d', border: '1px solid #78350f', borderRadius: 999, padding: '4px 10px', textTransform: 'capitalize', fontWeight: 700 },
+  daysLeft: { marginLeft: 'auto', color: '#cbd5e1', background: '#1e293b', borderRadius: 10, padding: '6px 10px', fontWeight: 700 },
+  goalTitle: { fontSize: 34, margin: '12px 0', color: '#e2e8f0' },
+  progressLabel: { fontSize: 22, fontWeight: 700 },
+  progressLag: { color: '#fb7185', fontWeight: 700 },
+  track: { marginTop: 10, height: 12, background: '#1f2e48', borderRadius: 999, overflow: 'hidden' },
+  fill: { height: '100%', background: 'linear-gradient(90deg,#0ea5e9,#22d3ee)' },
+  meta: { margin: '10px 0 0', color: '#94a3b8', fontSize: 18 },
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(<App />)

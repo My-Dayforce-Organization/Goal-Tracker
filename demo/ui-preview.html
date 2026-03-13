@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+<meta charset='utf-8'/><meta name='viewport' content='width=device-width, initial-scale=1'/>
+<title>Goal Tracker UI Preview</title>
+<style>
+body{margin:0;padding:20px;min-height:100vh;background:radial-gradient(circle at 10% 20%, #09203f 0%, #020617 45%, #01030a 100%);color:#e2e8f0;font-family:Inter,Arial}
+.shell{max-width:860px;margin:0 auto}.header{display:flex;justify-content:space-between;align-items:center;padding:8px 0 14px;border-bottom:1px solid #1e293b}
+.h1{margin:0;font-size:46px;font-weight:800;background:linear-gradient(90deg,#0ea5e9,#ec4899);-webkit-background-clip:text;color:transparent}.sub{margin-top:6px;color:#94a3b8}
+.nav{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:18px 0}.tab{background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:14px;padding:12px 10px;font-weight:700}.active{background:#0ea5e9;color:#f8fafc}
+.panel{background:rgba(2,6,23,.72);border:1px solid #233047;border-radius:20px;padding:18px;margin-bottom:16px;box-shadow:0 20px 45px rgba(14,165,233,.12)}
+.pt{margin:0 0 8px;font-size:40px;color:#f8fafc}.card{border-radius:24px;padding:20px 22px;display:flex;justify-content:space-between;align-items:center;color:#fff;margin-top:12px}
+.high{background:linear-gradient(135deg,#ff3d5a,#db2cb8)}.med{background:linear-gradient(135deg,#ffcd29,#ff7a18)}.low{background:linear-gradient(135deg,#36d399,#18b6c9)}
+.card strong{font-size:30px;display:block}.card p{margin:6px 0 12px;font-size:24px}.pill{display:inline-block;border-radius:999px;padding:8px 16px;font-size:17px;font-weight:700;background:rgba(255,255,255,.24)}.cnt{font-size:64px;font-weight:800}
+.g{border:1px solid #334155;border-left:6px solid #ff4d79;border-radius:18px;padding:14px;margin-bottom:12px;background:rgba(5,10,32,.95)}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.b{background:#4c1026;color:#fda4af;border:1px solid #9f1239;border-radius:999px;padding:4px 10px;font-size:14px;font-weight:700}.pc{background:#3f2b0f;color:#fcd34d;border:1px solid #78350f;border-radius:999px;padding:4px 10px}.days{margin-left:auto;color:#cbd5e1;background:#1e293b;border-radius:10px;padding:6px 10px;font-weight:700}
+.g h3{font-size:34px;margin:12px 0}.track{margin-top:10px;height:12px;background:#1f2e48;border-radius:999px}.fill{height:100%;background:linear-gradient(90deg,#0ea5e9,#22d3ee)}
+</style>
+</head>
+<body><div class='shell'>
+<div class='header'><div><h1 class='h1'>2026 Plan</h1><div class='sub'>💾 Saved to local device</div></div><div style='font-size:24px;letter-spacing:8px'>☀️ 👤 ⚙️</div></div>
+<div class='nav'><div class='tab active'>Dashboard</div><div class='tab'>My Plan</div><div class='tab'>My Systems</div><div class='tab'>Add</div></div>
+<div class='panel'><h2 class='pt'>Yearly Overview</h2><div class='sub'>Interactive analytics of your milestones.</div>
+<div class='card high'><div><strong>High Priority</strong><p>Must achieve goals</p><span class='pill'>VIEW DETAILS</span></div><span class='cnt'>1</span></div>
+<div class='card med'><div><strong>Medium Priority</strong><p>Steady progress needed</p><span class='pill'>VIEW DETAILS</span></div><span class='cnt'>2</span></div>
+<div class='card low'><div><strong>Low Priority</strong><p>Good to have</p><span class='pill'>VIEW DETAILS</span></div><span class='cnt'>1</span></div>
+</div>
+<div class='panel'><h2 class='pt'>Goal Progress Tracker</h2>
+<div class='g'><div class='row'><span class='b'>↘ Behind</span><span class='pc'>high</span><span class='days'>108 days left</span></div><h3>Learn a Programming Language</h3><div class='row'><span style='font-size:22px;font-weight:700'>PROGRESS 0%</span><span style='color:#fb7185;font-weight:700'>-40% Behind</span></div><div class='track'><div class='fill' style='width:0%'></div></div></div>
+<div class='g'><div class='row'><span class='b'>↘ Behind</span><span class='pc'>medium</span><span class='days'>293 days left</span></div><h3>Read 25 books</h3><div class='row'><span style='font-size:22px;font-weight:700'>PROGRESS 0%</span><span style='color:#fb7185;font-weight:700'>-20% Behind</span></div><div class='track'><div class='fill' style='width:0%'></div></div></div>
+</div></div></body></html>

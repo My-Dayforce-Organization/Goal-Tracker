@@ -2,9 +2,13 @@ from fastapi.testclient import TestClient
 from backend.app.main import app
 from backend.app.database import init_db
 from backend.seed import run
+import os
 
 
 def setup_module():
+    db_path = 'goal_tracker.db'
+    if os.path.exists(db_path):
+        os.remove(db_path)
     init_db()
     run()
 

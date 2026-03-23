@@ -1,156 +1,415 @@
 import React, { useMemo, useState } from 'react'
 import ReactDOM from 'react-dom/client'
+import './styles.css'
 
 type Priority = 'high' | 'medium' | 'low'
+type Status = 'behind' | 'on-track' | 'ahead'
+type TabKey = 'dashboard' | 'plan' | 'systems' | 'add'
 
-type GoalCard = {
+type Milestone = {
   id: number
   title: string
   priority: Priority
+  status: Status
   category: string
   timeline: string
   progress: number
+  target: number
   daysLeft: number
-  behindBy: number
+  description: string
 }
 
-const goals: GoalCard[] = [
-  { id: 1, title: 'Learn a Programming Language', priority: 'high', category: 'Learning', timeline: '3 - 6 months', progress: 0, daysLeft: 108, behindBy: 40 },
-  { id: 2, title: 'Read 25 books', priority: 'medium', category: 'Personal', timeline: '1 year', progress: 0, daysLeft: 293, behindBy: 20 },
-  { id: 3, title: 'Launch consulting profile', priority: 'medium', category: 'Work', timeline: '< 3 months', progress: 22, daysLeft: 54, behindBy: 10 },
-  { id: 4, title: 'Improve cardio health', priority: 'low', category: 'Health', timeline: '6 months', progress: 72, daysLeft: 146, behindBy: 0 },
+const initialMilestones: Milestone[] = [
+  {
+    id: 1,
+    title: 'Learn a Programming Language',
+    priority: 'high',
+    status: 'behind',
+    category: 'Learning',
+    timeline: 'Q1 - Q2',
+    progress: 34,
+    target: 48,
+    daysLeft: 103,
+    description: 'Complete one project-based path and ship two public mini apps.',
+  },
+  {
+    id: 2,
+    title: 'Read 25 books',
+    priority: 'medium',
+    status: 'on-track',
+    category: 'Personal Growth',
+    timeline: 'Full Year',
+    progress: 41,
+    target: 40,
+    daysLeft: 282,
+    description: 'Focus on leadership, product strategy, and communication.',
+  },
+  {
+    id: 3,
+    title: 'Find a Consultant role in a diff…',
+    priority: 'high',
+    status: 'behind',
+    category: 'Career',
+    timeline: 'Q2 - Q3',
+    progress: 26,
+    target: 45,
+    daysLeft: 173,
+    description: 'Build portfolio proof, refine pitch, and apply weekly.',
+  },
+  {
+    id: 4,
+    title: 'Run a marathon',
+    priority: 'medium',
+    status: 'on-track',
+    category: 'Fitness',
+    timeline: 'Q3 - Q4',
+    progress: 59,
+    target: 55,
+    daysLeft: 210,
+    description: 'Follow a progressive 20-week running plan and recovery schedule.',
+  },
+  {
+    id: 5,
+    title: 'Maintain personal health',
+    priority: 'low',
+    status: 'ahead',
+    category: 'Health',
+    timeline: 'Full Year',
+    progress: 68,
+    target: 62,
+    daysLeft: 282,
+    description: 'Keep sleep, hydration, and mobility habits above 85% compliance.',
+  },
 ]
 
-const badgeGradient: Record<Priority, string> = {
-  high: 'linear-gradient(135deg, #ff3d5a, #db2cb8)',
-  medium: 'linear-gradient(135deg, #ffcd29, #ff7a18)',
-  low: 'linear-gradient(135deg, #36d399, #18b6c9)',
+const tabs: Array<{ key: TabKey; label: string; icon: string }> = [
+  { key: 'dashboard', label: 'Dashboard', icon: '◉' },
+  { key: 'plan', label: 'My Plan', icon: '✓' },
+  { key: 'systems', label: 'My Systems', icon: '∞' },
+  { key: 'add', label: 'Add', icon: '+' },
+]
+
+const priorityMeta: Record<Priority, { label: string; color: string; accent: string }> = {
+  high: { label: 'High', color: 'var(--danger)', accent: 'var(--danger-soft)' },
+  medium: { label: 'Medium', color: 'var(--warning)', accent: 'var(--warning-soft)' },
+  low: { label: 'Low', color: 'var(--success)', accent: 'var(--success-soft)' },
+}
+
+function classNames(...classes: Array<string | false | undefined>) {
+  return classes.filter(Boolean).join(' ')
 }
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'plan' | 'systems' | 'add'>('dashboard')
+  const [activeTab, setActiveTab] = useState<TabKey>('dashboard')
+  const [darkMode, setDarkMode] = useState(true)
+  const [milestones, setMilestones] = useState(initialMilestones)
 
-  const counts = useMemo(() => {
-    const high = goals.filter((g) => g.priority === 'high').length
-    const medium = goals.filter((g) => g.priority === 'medium').length
-    const low = goals.filter((g) => g.priority === 'low').length
-    return { high, medium, low }
-  }, [])
+  const [newMilestone, setNewMilestone] = useState({
+    title: '',
+    startDate: '',
+    description: '',
+    category: 'Career',
+    timeline: 'Q2 - Q3',
+    priority: 'medium' as Priority,
+  })
+
+  const summary = useMemo(() => {
+    const high = milestones.filter((m) => m.priority === 'high').length
+    const medium = milestones.filter((m) => m.priority === 'medium').length
+    const low = milestones.filter((m) => m.priority === 'low').length
+    const total = high + medium + low || 1
+    return {
+      high,
+      medium,
+      low,
+      slices: [
+        { label: 'High Priority', value: Math.round((high / total) * 100), color: 'var(--danger)' },
+        { label: 'Medium Priority', value: Math.round((medium / total) * 100), color: 'var(--warning)' },
+        { label: 'Low Priority', value: Math.round((low / total) * 100), color: 'var(--success)' },
+      ],
+    }
+  }, [milestones])
+
+  const onAddMilestone = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newMilestone.title.trim() || !newMilestone.description.trim()) return
+
+    const next: Milestone = {
+      id: milestones.length + 1,
+      title: newMilestone.title,
+      category: newMilestone.category,
+      timeline: newMilestone.timeline,
+      priority: newMilestone.priority,
+      status: 'on-track',
+      progress: 0,
+      target: 8,
+      daysLeft: 300,
+      description: newMilestone.description,
+    }
+
+    setMilestones((prev) => [next, ...prev])
+    setActiveTab('plan')
+    setNewMilestone({
+      title: '',
+      startDate: '',
+      description: '',
+      category: 'Career',
+      timeline: 'Q2 - Q3',
+      priority: 'medium',
+    })
+  }
 
   return (
-    <main style={styles.page}>
-      <div style={styles.phoneShell}>
-        <header style={styles.header}>
+    <div className={classNames('app-shell', darkMode ? 'theme-dark' : 'theme-light')}>
+      <div className="gradient-bg" />
+      <main className="container">
+        <header className="header-card panel">
           <div>
-            <h1 style={styles.title}>2026 Plan</h1>
-            <p style={styles.sub}>💾 Saved to local device</p>
+            <h1>2026 Plan</h1>
+            <p>Saved to local device</p>
           </div>
-          <div style={styles.icons}>☀️ 👤 ⚙️</div>
+          <div className="header-actions" aria-label="top actions">
+            <button type="button" className="icon-btn" onClick={() => setDarkMode((v) => !v)}>
+              {darkMode ? '☀︎' : '☾'}
+            </button>
+            <button type="button" className="icon-btn">👤</button>
+            <button type="button" className="icon-btn">⚙︎</button>
+          </div>
         </header>
 
-        <nav style={styles.nav}>
-          {[
-            ['dashboard', 'Dashboard'],
-            ['plan', 'My Plan'],
-            ['systems', 'My Systems'],
-            ['add', 'Add'],
-          ].map(([id, label]) => (
-            <button key={id} onClick={() => setActiveTab(id as any)} style={{ ...styles.tabBtn, ...(activeTab === id ? styles.tabBtnActive : {}) }}>
-              {label}
+        <nav className="tabs panel">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              className={classNames('tab-btn', activeTab === tab.key && 'tab-btn-active')}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              <span>{tab.icon}</span>
+              <span>{tab.label}</span>
             </button>
           ))}
         </nav>
 
-        <section style={styles.panel}>
-          <h2 style={styles.panelTitle}>Yearly Overview</h2>
-          <p style={styles.sub}>Interactive analytics of your milestones.</p>
-
-          <div style={{ ...styles.priorityCard, background: badgeGradient.high }}>
-            <div>
-              <strong style={styles.priorityTitle}>High Priority</strong>
-              <p style={styles.prioritySubtitle}>Must achieve goals</p>
-              <span style={styles.pill}>VIEW DETAILS</span>
-            </div>
-            <span style={styles.priorityCount}>{counts.high}</span>
-          </div>
-
-          <div style={{ ...styles.priorityCard, background: badgeGradient.medium }}>
-            <div>
-              <strong style={styles.priorityTitle}>Medium Priority</strong>
-              <p style={styles.prioritySubtitle}>Steady progress needed</p>
-              <span style={styles.pill}>VIEW DETAILS</span>
-            </div>
-            <span style={styles.priorityCount}>{counts.medium}</span>
-          </div>
-
-          <div style={{ ...styles.priorityCard, background: badgeGradient.low }}>
-            <div>
-              <strong style={styles.priorityTitle}>Low Priority</strong>
-              <p style={styles.prioritySubtitle}>Good to have</p>
-              <span style={styles.pill}>VIEW DETAILS</span>
-            </div>
-            <span style={styles.priorityCount}>{counts.low}</span>
-          </div>
-        </section>
-
-        <section style={styles.panel}>
-          <h2 style={styles.panelTitle}>Goal Progress Tracker</h2>
-          {goals.map((goal) => (
-            <article key={goal.id} style={styles.goalCard}>
-              <div style={styles.goalTopRow}>
-                <span style={styles.behind}>↘ Behind</span>
-                <span style={styles.priorityChip}>{goal.priority}</span>
-                <span style={styles.daysLeft}>{goal.daysLeft} days left</span>
+        {activeTab === 'dashboard' && (
+          <section className="grid-layout">
+            <article className="panel overview">
+              <h2>Yearly Overview</h2>
+              <p>Interactive analytics of your milestones.</p>
+              <div className="analytics-grid">
+                <DonutCard slices={summary.slices} />
+                <div className="summary-stack">
+                  <SummaryCard title="High Priority" subtitle="Critical outcomes" count={summary.high} tone="high" />
+                  <SummaryCard title="Medium Priority" subtitle="Steady focus" count={summary.medium} tone="medium" />
+                  <SummaryCard title="Low Priority" subtitle="Maintenance goals" count={summary.low} tone="low" />
+                </div>
               </div>
-              <h3 style={styles.goalTitle}>{goal.title}</h3>
-              <div style={styles.goalTopRow}>
-                <span style={styles.progressLabel}>PROGRESS {goal.progress}%</span>
-                <span style={styles.progressLag}>-{goal.behindBy}% Behind</span>
-              </div>
-              <div style={styles.track}><div style={{ ...styles.fill, width: `${goal.progress}%` }} /></div>
-              <p style={styles.meta}>{goal.category} • {goal.timeline}</p>
             </article>
-          ))}
-        </section>
-      </div>
-    </main>
+
+            <article className="panel">
+              <h3>Goal Progress Tracker</h3>
+              <p className="muted">Tap any milestone to expand details.</p>
+              <div className="milestone-list">
+                {milestones.slice(0, 4).map((milestone) => (
+                  <MilestoneCard key={milestone.id} milestone={milestone} />
+                ))}
+              </div>
+            </article>
+          </section>
+        )}
+
+        {activeTab === 'plan' && (
+          <section className="panel">
+            <h3>My Plan</h3>
+            <p className="muted">Track each milestone by progress, timeline, and category.</p>
+            <div className="milestone-list">
+              {milestones.map((milestone) => (
+                <MilestoneCard key={milestone.id} milestone={milestone} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {activeTab === 'systems' && (
+          <section className="panel systems-grid">
+            <article className="stat-box">
+              <h4>Weekly Review System</h4>
+              <p>Every Sunday: review progress, rebalance priorities, and schedule next actions.</p>
+              <span>Streak: 8 weeks</span>
+            </article>
+            <article className="stat-box">
+              <h4>Execution Quality</h4>
+              <p>Completion trend remains healthy with 74% planned actions completed on time.</p>
+              <span>Trend: +6% this month</span>
+            </article>
+            <article className="stat-box">
+              <h4>Category Balance</h4>
+              <p>Career and learning are the most active categories. Health goals are stable.</p>
+              <span>Balance score: 82 / 100</span>
+            </article>
+          </section>
+        )}
+
+        {activeTab === 'add' && (
+          <section className="panel">
+            <h3>Add New 2026 Milestone</h3>
+            <p className="muted">Capture the goal clearly so your plan can track and prioritize it.</p>
+            <form className="form-grid" onSubmit={onAddMilestone}>
+              <Field label="Specific Milestone">
+                <input
+                  placeholder="Example: Build a data analytics side project"
+                  value={newMilestone.title}
+                  onChange={(e) => setNewMilestone((prev) => ({ ...prev, title: e.target.value }))}
+                />
+              </Field>
+
+              <Field label="Start Date">
+                <input
+                  type="date"
+                  value={newMilestone.startDate}
+                  onChange={(e) => setNewMilestone((prev) => ({ ...prev, startDate: e.target.value }))}
+                />
+              </Field>
+
+              <Field label="Description (Context for AI)">
+                <textarea
+                  rows={4}
+                  placeholder="Add why this milestone matters, blockers, and what success looks like."
+                  value={newMilestone.description}
+                  onChange={(e) => setNewMilestone((prev) => ({ ...prev, description: e.target.value }))}
+                />
+              </Field>
+
+              <Field label="Category">
+                <select value={newMilestone.category} onChange={(e) => setNewMilestone((prev) => ({ ...prev, category: e.target.value }))}>
+                  <option>Career</option>
+                  <option>Learning</option>
+                  <option>Health</option>
+                  <option>Personal Growth</option>
+                </select>
+              </Field>
+
+              <div className="split-2">
+                <Field label="Timeline">
+                  <select value={newMilestone.timeline} onChange={(e) => setNewMilestone((prev) => ({ ...prev, timeline: e.target.value }))}>
+                    <option>&lt; 3 months</option>
+                    <option>Q2 - Q3</option>
+                    <option>Q3 - Q4</option>
+                    <option>Full Year</option>
+                  </select>
+                </Field>
+
+                <Field label="Priority">
+                  <select
+                    value={newMilestone.priority}
+                    onChange={(e) => setNewMilestone((prev) => ({ ...prev, priority: e.target.value as Priority }))}
+                  >
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </Field>
+              </div>
+
+              <button type="submit" className="submit-btn">Add Milestone</button>
+            </form>
+          </section>
+        )}
+      </main>
+    </div>
   )
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: '100vh',
-    background: 'radial-gradient(circle at 10% 20%, #09203f 0%, #020617 45%, #01030a 100%)',
-    color: '#e2e8f0',
-    padding: 20,
-    fontFamily: 'Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial',
-  },
-  phoneShell: { maxWidth: 860, margin: '0 auto' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0 14px', borderBottom: '1px solid #1e293b' },
-  title: { margin: 0, fontSize: 46, fontWeight: 800, background: 'linear-gradient(90deg,#0ea5e9,#ec4899)', WebkitBackgroundClip: 'text', color: 'transparent' },
-  sub: { margin: '6px 0 0', color: '#94a3b8' },
-  icons: { fontSize: 24, letterSpacing: 8 },
-  nav: { display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, margin: '18px 0' },
-  tabBtn: { background: '#1e293b', color: '#94a3b8', border: '1px solid #334155', borderRadius: 14, padding: '12px 10px', fontWeight: 700 },
-  tabBtnActive: { background: '#0ea5e9', color: '#f8fafc' },
-  panel: { background: 'rgba(2, 6, 23, 0.72)', border: '1px solid #233047', borderRadius: 20, padding: 18, marginBottom: 16, boxShadow: '0 20px 45px rgba(14, 165, 233, 0.12)' },
-  panelTitle: { margin: '0 0 8px', fontSize: 40, color: '#f8fafc' },
-  priorityCard: { borderRadius: 24, padding: '20px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'white', marginTop: 12 },
-  priorityTitle: { fontSize: 30, display: 'block' },
-  prioritySubtitle: { margin: '6px 0 12px', fontSize: 24, opacity: 0.95 },
-  priorityCount: { fontSize: 64, fontWeight: 800 },
-  pill: { display: 'inline-block', borderRadius: 999, padding: '8px 16px', fontSize: 17, fontWeight: 700, background: 'rgba(255,255,255,0.24)' },
-  goalCard: { border: '1px solid #334155', borderLeft: '6px solid #ff4d79', borderRadius: 18, padding: 14, marginBottom: 12, background: 'rgba(5, 10, 32, 0.95)' },
-  goalTopRow: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  behind: { background: '#4c1026', color: '#fda4af', border: '1px solid #9f1239', borderRadius: 999, padding: '4px 10px', fontSize: 14, fontWeight: 700 },
-  priorityChip: { background: '#3f2b0f', color: '#fcd34d', border: '1px solid #78350f', borderRadius: 999, padding: '4px 10px', textTransform: 'capitalize', fontWeight: 700 },
-  daysLeft: { marginLeft: 'auto', color: '#cbd5e1', background: '#1e293b', borderRadius: 10, padding: '6px 10px', fontWeight: 700 },
-  goalTitle: { fontSize: 34, margin: '12px 0', color: '#e2e8f0' },
-  progressLabel: { fontSize: 22, fontWeight: 700 },
-  progressLag: { color: '#fb7185', fontWeight: 700 },
-  track: { marginTop: 10, height: 12, background: '#1f2e48', borderRadius: 999, overflow: 'hidden' },
-  fill: { height: '100%', background: 'linear-gradient(90deg,#0ea5e9,#22d3ee)' },
-  meta: { margin: '10px 0 0', color: '#94a3b8', fontSize: 18 },
+function SummaryCard({ title, subtitle, count, tone }: { title: string; subtitle: string; count: number; tone: Priority }) {
+  return (
+    <div className={classNames('summary-card', `tone-${tone}`)}>
+      <div>
+        <h4>{title}</h4>
+        <p>{subtitle}</p>
+      </div>
+      <strong>{count}</strong>
+    </div>
+  )
+}
+
+function MilestoneCard({ milestone }: { milestone: Milestone }) {
+  const [expanded, setExpanded] = useState(false)
+
+  return (
+    <article className={classNames('milestone-card', `tone-${milestone.priority}`)}>
+      <div className="row between">
+        <div className="row wrap">
+          <span className={classNames('badge', `status-${milestone.status}`)}>{milestone.status === 'behind' ? 'Behind' : milestone.status === 'ahead' ? 'Ahead' : 'On Track'}</span>
+          <span className={classNames('badge', `priority-${milestone.priority}`)}>{priorityMeta[milestone.priority].label}</span>
+        </div>
+        <button type="button" className="icon-btn edit">✎</button>
+      </div>
+
+      <h4>{milestone.title}</h4>
+
+      <div className="row between compact">
+        <span className="muted-strong">{milestone.daysLeft} days left</span>
+        <span>Progress {milestone.progress}%</span>
+        <span>Target {milestone.target}%</span>
+      </div>
+
+      <div className="progress-track">
+        <span style={{ width: `${milestone.progress}%` }} />
+      </div>
+      <div className="target-line" style={{ left: `${milestone.target}%` }} />
+
+      <div className="row between compact meta-row">
+        <span>{milestone.category}</span>
+        <span>{milestone.timeline}</span>
+      </div>
+
+      <button type="button" className="expand-btn" onClick={() => setExpanded((v) => !v)}>
+        <span>{expanded ? 'Hide details' : 'Show details'}</span>
+        <span className={classNames('chevron', expanded && 'open')}>⌄</span>
+      </button>
+
+      {expanded && <p className="expanded-text">{milestone.description}</p>}
+    </article>
+  )
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="field">
+      <span>{label}</span>
+      {children}
+    </label>
+  )
+}
+
+function DonutCard({ slices }: { slices: Array<{ label: string; value: number; color: string }> }) {
+  const donutGradient = `conic-gradient(${slices
+    .map((slice, i) => {
+      const start = slices.slice(0, i).reduce((acc, s) => acc + s.value, 0)
+      const end = start + slice.value
+      return `${slice.color} ${start}% ${end}%`
+    })
+    .join(', ')})`
+
+  return (
+    <article className="donut-card">
+      <h4>Category Distribution</h4>
+      <div className="donut-wrap">
+        <div className="donut" style={{ background: donutGradient }}>
+          <span>2026</span>
+        </div>
+        <ul>
+          {slices.map((slice) => (
+            <li key={slice.label}>
+              <span className="dot" style={{ background: slice.color }} />
+              <span>{slice.label}</span>
+              <strong>{slice.value}%</strong>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </article>
+  )
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(<App />)

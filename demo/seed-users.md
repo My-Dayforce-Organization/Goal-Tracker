@@ -1,0 +1,3 @@
+- manager@example.com
+- alice@example.com
+- evan@example.com

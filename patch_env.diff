@@ -1,0 +1,15 @@
+diff --git a/.env.example b/.env.example
+new file mode 100644
+index 0000000000000000000000000000000000000000..523bfed5322c902b4c2212d7bac20cc0b6f7556a
+--- /dev/null
++++ b/.env.example
+@@ -0,0 +1,9 @@
++DATABASE_URL=sqlite:///./goal_tracker.db
++REDIS_URL=redis://redis:6379/0
++OIDC_ISSUER=
++OIDC_CLIENT_ID=
++OIDC_CLIENT_SECRET=
++AZURE_GRAPH_ENABLED=false
++EXTERNAL_LLM_ENABLED=false
++ORG_LLM_OPT_OUT=false
++SENTRY_DSN=

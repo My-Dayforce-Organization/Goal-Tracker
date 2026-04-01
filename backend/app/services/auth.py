@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import Header, HTTPException
+from fastapi import HTTPException
 
 from app.models.entities import User
 from app.services.storage import StorageService
@@ -16,7 +16,7 @@ class AuthService:
             raise HTTPException(status_code=401, detail="Invalid credentials")
         return user
 
-    def get_current_user(self, authorization: str | None = Header(default=None)) -> User:
+    def get_current_user_from_header(self, authorization: str | None) -> User:
         if not authorization or not authorization.startswith("Bearer "):
             raise HTTPException(status_code=401, detail="Missing auth token")
         token = authorization.split(" ", 1)[1]

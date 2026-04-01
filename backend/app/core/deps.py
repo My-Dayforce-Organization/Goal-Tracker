@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from fastapi import Depends
+from fastapi import Depends, Header
 
 from app.models.entities import User
 from app.services.auth import AuthService
@@ -19,8 +19,11 @@ def get_auth_service() -> AuthService:
     return AuthService(get_storage())
 
 
-def get_current_user(auth: AuthService = Depends(get_auth_service)) -> User:
-    return auth.get_current_user()
+def get_current_user(
+    authorization: str | None = Header(default=None),
+    auth: AuthService = Depends(get_auth_service),
+) -> User:
+    return auth.get_current_user_from_header(authorization)
 
 
 def get_milestone_service() -> MilestoneService:

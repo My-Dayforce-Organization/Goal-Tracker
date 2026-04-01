@@ -10,6 +10,18 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
+      '/openapi.json': {
+        target: 'http://backend:8000',
+        changeOrigin: true,
+      },
+      '/docs': {
+        target: 'http://backend:8000',
+        changeOrigin: true,
+      },
+      '/redoc': {
+        target: 'http://backend:8000',
+        changeOrigin: true,
+      },
     },
   },
 });

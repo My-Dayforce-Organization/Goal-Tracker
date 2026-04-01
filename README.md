@@ -20,10 +20,10 @@ docker-compose up --build
 ```
 
 Frontend: http://localhost:5173  
-Backend API docs (through frontend proxy): http://localhost:5173/api/docs  
+Backend API docs (through frontend proxy): http://localhost:5173/docs (or `/api/docs`)  
 Backend API docs (direct backend port): http://localhost:8000/docs
 
-> The frontend calls `/api/*`, which Vite proxies to the backend service. In Codespaces, prefer `http://localhost:5173/api/docs` from the frontend-forwarded URL context.
+> The frontend proxies `/api/*` to backend endpoints and also proxies `/docs`, `/redoc`, and `/openapi.json` so Swagger UI works from the frontend-forwarded URL in Codespaces.
 
 ## Features
 - Employee milestone CRUD and progress tracking

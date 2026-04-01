@@ -6,6 +6,13 @@ import { Dashboard as DashboardType, Milestone } from '../types';
 
 const COLORS = ['#16a34a', '#dc2626', '#0ea5e9'];
 
+const STATUS_OPTIONS = [
+  { value: 'not_started', label: 'Not started' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'overdue', label: 'Overdue' },
+];
+
 type MilestoneDraft = {
   title: string;
   description: string;
@@ -23,6 +30,8 @@ export const Dashboard = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const getScopedUserId = () => (auth?.role === 'manager' ? 'u_emp_1' : auth?.userId);
+
   const buildDrafts = (items: Milestone[]) => {
     const next: Record<string, MilestoneDraft> = {};
     items.forEach((m) => {
@@ -37,12 +46,12 @@ export const Dashboard = () => {
     setDrafts(next);
   };
 
-  const load = async () => {
+  const load = async (showPageLoader = true) => {
     if (!auth) return;
-    setLoading(true);
+    if (showPageLoader) setLoading(true);
     setError(null);
     try {
-      const milestoneUserId = auth.role === 'manager' ? 'u_emp_1' : auth.userId;
+      const milestoneUserId = getScopedUserId();
       const [{ data: milestoneData }, { data: dashboardData }] = await Promise.all([
         api.get(`/users/${milestoneUserId}/milestones`),
         api.get('/dashboard'),
@@ -53,7 +62,7 @@ export const Dashboard = () => {
     } catch {
       setError('Could not load dashboard data. Verify backend is reachable and refresh.');
     } finally {
-      setLoading(false);
+      if (showPageLoader) setLoading(false);
     }
   };
 
@@ -82,9 +91,18 @@ export const Dashboard = () => {
         progress: Number(draft.progress),
         status: draft.status,
       });
-      await load();
+      await load(false);
     } catch {
       setError('Failed to save milestone changes.');
+    }
+  };
+
+  const deleteMilestone = async (milestoneId: string) => {
+    try {
+      await api.delete(`/milestones/${milestoneId}`);
+      await load(false);
+    } catch {
+      setError('Failed to delete milestone.');
     }
   };
 
@@ -92,13 +110,13 @@ export const Dashboard = () => {
     if (!auth) return;
     try {
       await api.post('/milestones', {
-        user_id: auth.role === 'manager' ? 'u_emp_1' : auth.userId,
+        user_id: getScopedUserId(),
         title: `New milestone ${new Date().toLocaleTimeString()}`,
         description: 'Created from demo UI',
         due_date: new Date(Date.now() + 10 * 86400000).toISOString(),
         progress: 0,
       });
-      await load();
+      await load(false);
     } catch {
       setError('Failed to create milestone.');
     }
@@ -108,20 +126,18 @@ export const Dashboard = () => {
     e.preventDefault();
     if (!auth) return;
     try {
-      const targetUser = auth.role === 'manager' ? 'u_emp_1' : auth.userId;
       await api.post('/nl/ingest', {
-        user_id: targetUser,
+        user_id: getScopedUserId(),
         client_event_id: `ui-${Date.now()}`,
         text: nlText,
       });
-      await load();
+      await load(false);
     } catch {
       setError('Failed to process natural language update.');
     }
   };
 
   if (!auth) return null;
-
   if (loading) return <div className="min-h-screen p-6 text-slate-600">Loading dashboard…</div>;
 
   if (error) {
@@ -130,7 +146,7 @@ export const Dashboard = () => {
         <h1 className="text-xl font-semibold">Dashboard unavailable</h1>
         <p className="text-red-600">{error}</p>
         <p className="text-sm text-slate-600">Backend docs: <a className="underline" href="/api/docs" target="_blank" rel="noreferrer">/api/docs</a></p>
-        <button onClick={load} className="bg-blue-600 text-white px-3 py-2 rounded">Retry</button>
+        <button onClick={() => load()} className="bg-blue-600 text-white px-3 py-2 rounded">Retry</button>
       </div>
     );
   }
@@ -204,17 +220,19 @@ export const Dashboard = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   <input type="date" value={draft.due_date} onChange={(e) => patchDraft(m.id, 'due_date', e.target.value)} className="border rounded p-2" />
                   <select value={draft.status} onChange={(e) => patchDraft(m.id, 'status', e.target.value)} className="border rounded p-2">
-                    <option value="not_started">not_started</option>
-                    <option value="in_progress">in_progress</option>
-                    <option value="completed">completed</option>
-                    <option value="overdue">overdue</option>
+                    {STATUS_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
                   </select>
                   <div className="flex items-center gap-2">
                     <input type="range" min={0} max={100} value={draft.progress} onChange={(e) => patchDraft(m.id, 'progress', Number(e.target.value))} className="w-full" />
                     <span className="text-sm w-12">{draft.progress}%</span>
                   </div>
                 </div>
-                <button onClick={() => saveMilestone(m.id)} className="bg-blue-600 text-white px-3 py-1 rounded">Save Changes</button>
+                <div className="flex gap-2">
+                  <button onClick={() => saveMilestone(m.id)} className="bg-blue-600 text-white px-3 py-1 rounded">Save Changes</button>
+                  <button onClick={() => deleteMilestone(m.id)} className="bg-red-600 text-white px-3 py-1 rounded">Delete</button>
+                </div>
               </div>
             );
           })}
@@ -223,6 +241,12 @@ export const Dashboard = () => {
 
       <form onSubmit={submitNl} className="bg-white rounded-xl p-4 shadow space-y-2">
         <h2 className="font-semibold">Natural language update</h2>
+        <ol className="list-decimal list-inside text-sm text-slate-600 space-y-1">
+          <li>Type an update sentence (example: <span className="font-mono">Update milestone m_emp1_1 to 80%</span>).</li>
+          <li>Click <strong>Submit NLP Event</strong>.</li>
+          <li>The app parses percent and milestone id; if no id is provided, it updates the first milestone.</li>
+          <li>Each request is idempotent by client event id, so duplicate event IDs are safely ignored.</li>
+        </ol>
         <input value={nlText} onChange={(e) => setNlText(e.target.value)} className="w-full border rounded p-2" />
         <button className="bg-blue-600 text-white px-3 py-2 rounded">Submit NLP Event</button>
       </form>

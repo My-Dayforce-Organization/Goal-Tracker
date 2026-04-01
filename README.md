@@ -20,7 +20,9 @@ docker-compose up --build
 ```
 
 Frontend: http://localhost:5173  
-Backend API: http://localhost:8000/docs
+Backend API (direct): http://localhost:8000/docs
+
+> The frontend now calls `/api/*`, which is proxied by Vite to the backend service. This works cleanly in local Docker and Codespaces forwarded ports.
 
 ## Features
 - Employee milestone CRUD and progress tracking

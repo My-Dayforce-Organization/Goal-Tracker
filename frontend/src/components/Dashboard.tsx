@@ -25,6 +25,7 @@ export const Dashboard = () => {
   const { auth, logout } = useAuth();
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [drafts, setDrafts] = useState<Record<string, MilestoneDraft>>({});
+  const [editing, setEditing] = useState<Record<string, boolean>>({});
   const [dashboard, setDashboard] = useState<DashboardType | null>(null);
   const [nlText, setNlText] = useState('update status of Launch onboarding revamp to completed');
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +48,7 @@ export const Dashboard = () => {
       };
     });
     setDrafts(next);
+    setEditing(Object.fromEntries(items.map((m) => [m.id, false])));
   };
 
   const load = async (showPageLoader = true) => {
@@ -268,28 +270,49 @@ export const Dashboard = () => {
           {milestones.map((m) => {
             const draft = drafts[m.id];
             if (!draft) return null;
+            const isEditing = editing[m.id];
             return (
               <div key={m.id} className="border rounded p-3 space-y-2">
-                <label className="block text-xs font-medium text-slate-600">Title</label>
-                <input value={draft.title} onChange={(e) => patchDraft(m.id, 'title', e.target.value)} className="w-full border rounded p-2" />
-                <label className="block text-xs font-medium text-slate-600">Description</label>
-                <textarea value={draft.description} onChange={(e) => patchDraft(m.id, 'description', e.target.value)} className="w-full border rounded p-2" rows={2} />
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                  <input type="date" value={draft.due_date} onChange={(e) => patchDraft(m.id, 'due_date', e.target.value)} className="border rounded p-2" />
-                  <select value={draft.status} onChange={(e) => patchDraft(m.id, 'status', e.target.value)} className="border rounded p-2">
-                    {STATUS_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                  <div className="flex items-center gap-2">
-                    <input type="range" min={0} max={100} value={draft.progress} onChange={(e) => handleProgressChange(m.id, Number(e.target.value))} className="w-full" />
-                    <span className="text-sm w-12">{draft.progress}%</span>
+                <div className="flex justify-between items-center">
+                  <p className="font-medium">{m.title}</p>
+                  <div className="flex gap-2">
+                    <button onClick={() => setEditing((prev) => ({ ...prev, [m.id]: !prev[m.id] }))} className="text-slate-600 border rounded px-2 py-1" title="Edit" aria-label="Edit">
+                      ✏️
+                    </button>
+                    <button onClick={() => deleteMilestone(m.id)} className="text-red-600 border border-red-200 rounded px-2 py-1" title="Delete" aria-label="Delete">
+                      🗑️
+                    </button>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={() => saveMilestone(m.id)} className="bg-blue-600 text-white px-3 py-1 rounded">Save Changes</button>
-                  <button onClick={() => deleteMilestone(m.id)} className="bg-red-600 text-white px-3 py-1 rounded">Delete</button>
-                </div>
+
+                {!isEditing ? (
+                  <div className="text-sm text-slate-600 space-y-1">
+                    <p><span className="font-medium">Description:</span> {m.description || '-'}</p>
+                    <p><span className="font-medium">Due date:</span> {new Date(m.due_date).toLocaleDateString()}</p>
+                    <p><span className="font-medium">Status:</span> {m.status.replaceAll('_', ' ')}</p>
+                    <p><span className="font-medium">Progress:</span> {m.progress}%</p>
+                  </div>
+                ) : (
+                  <>
+                    <label className="block text-xs font-medium text-slate-600">Title</label>
+                    <input value={draft.title} onChange={(e) => patchDraft(m.id, 'title', e.target.value)} className="w-full border rounded p-2" />
+                    <label className="block text-xs font-medium text-slate-600">Description</label>
+                    <textarea value={draft.description} onChange={(e) => patchDraft(m.id, 'description', e.target.value)} className="w-full border rounded p-2" rows={2} />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                      <input type="date" value={draft.due_date} onChange={(e) => patchDraft(m.id, 'due_date', e.target.value)} className="border rounded p-2" />
+                      <select value={draft.status} onChange={(e) => patchDraft(m.id, 'status', e.target.value)} className="border rounded p-2">
+                        {STATUS_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                      <div className="flex items-center gap-2">
+                        <input type="range" min={0} max={100} value={draft.progress} onChange={(e) => handleProgressChange(m.id, Number(e.target.value))} className="w-full" />
+                        <span className="text-sm w-12">{draft.progress}%</span>
+                      </div>
+                    </div>
+                    <button onClick={() => saveMilestone(m.id)} className="bg-blue-600 text-white px-3 py-1 rounded">Save</button>
+                  </>
+                )}
               </div>
             );
           })}

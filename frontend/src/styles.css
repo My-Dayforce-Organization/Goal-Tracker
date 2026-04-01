@@ -1,3 +1,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@keyframes subtlePop {
+  0% { transform: scale(0.98); opacity: 0.7; }
+  50% { transform: scale(1.01); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.95; }
+}
+
+.congrats-banner {
+  animation: subtlePop 1.5s ease-in-out infinite;
+}

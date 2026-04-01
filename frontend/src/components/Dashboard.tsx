@@ -1,5 +1,5 @@
-import { FormEvent, useEffect, useState } from 'react';
-import { Pie, PieChart, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { Pie, PieChart, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { Dashboard as DashboardType, Milestone } from '../types';
@@ -26,8 +26,10 @@ export const Dashboard = () => {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [drafts, setDrafts] = useState<Record<string, MilestoneDraft>>({});
   const [dashboard, setDashboard] = useState<DashboardType | null>(null);
-  const [nlText, setNlText] = useState('Update milestone m_emp1_1 to 65%');
+  const [nlText, setNlText] = useState('update status of Launch onboarding revamp to completed');
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [showCongrats, setShowCongrats] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const getScopedUserId = () => (auth?.role === 'manager' ? 'u_emp_1' : auth?.userId);
@@ -59,6 +61,7 @@ export const Dashboard = () => {
       setMilestones(milestoneData);
       buildDrafts(milestoneData);
       setDashboard(dashboardData);
+      setShowCongrats(milestoneData.some((m: Milestone) => m.progress >= 100));
     } catch {
       setError('Could not load dashboard data. Verify backend is reachable and refresh.');
     } finally {
@@ -69,6 +72,12 @@ export const Dashboard = () => {
   useEffect(() => {
     load();
   }, [auth?.userId]);
+
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(null), 2200);
+    return () => clearTimeout(timer);
+  }, [notice]);
 
   const patchDraft = (milestoneId: string, key: keyof MilestoneDraft, value: string | number) => {
     setDrafts((prev) => ({
@@ -91,6 +100,7 @@ export const Dashboard = () => {
         progress: Number(draft.progress),
         status: draft.status,
       });
+      setNotice('Milestone changes saved.');
       await load(false);
     } catch {
       setError('Failed to save milestone changes.');
@@ -100,6 +110,7 @@ export const Dashboard = () => {
   const deleteMilestone = async (milestoneId: string) => {
     try {
       await api.delete(`/milestones/${milestoneId}`);
+      setNotice('Milestone deleted.');
       await load(false);
     } catch {
       setError('Failed to delete milestone.');
@@ -116,6 +127,7 @@ export const Dashboard = () => {
         due_date: new Date(Date.now() + 10 * 86400000).toISOString(),
         progress: 0,
       });
+      setNotice('Milestone created.');
       await load(false);
     } catch {
       setError('Failed to create milestone.');
@@ -131,11 +143,21 @@ export const Dashboard = () => {
         client_event_id: `ui-${Date.now()}`,
         text: nlText,
       });
+      setNotice('Natural language update applied.');
       await load(false);
     } catch {
       setError('Failed to process natural language update.');
     }
   };
+
+  const pieData = useMemo(() => {
+    if (!dashboard) return [];
+    return [
+      { name: 'Completed', value: dashboard.completed_milestones },
+      { name: 'Overdue', value: dashboard.overdue_milestones },
+      { name: 'In Progress', value: Math.max(dashboard.total_milestones - dashboard.completed_milestones - dashboard.overdue_milestones, 0) },
+    ];
+  }, [dashboard]);
 
   if (!auth) return null;
   if (loading) return <div className="min-h-screen p-6 text-slate-600">Loading dashboard…</div>;
@@ -153,16 +175,15 @@ export const Dashboard = () => {
 
   if (!dashboard) return null;
 
-  const pieData = [
-    { name: 'Completed', value: dashboard.completed_milestones },
-    { name: 'Overdue', value: dashboard.overdue_milestones },
-    { name: 'In Progress', value: Math.max(dashboard.total_milestones - dashboard.completed_milestones - dashboard.overdue_milestones, 0) },
-  ];
-
-  const barData = Object.entries(dashboard.by_employee).map(([userId, d]) => ({ userId, progress: d.avg_progress }));
-
   return (
-    <div className="min-h-screen p-4 md:p-8 space-y-4">
+    <div className="min-h-screen p-4 md:p-8 space-y-4 relative">
+      {notice && <div className="fixed top-4 right-4 bg-emerald-600 text-white px-4 py-2 rounded shadow-lg z-50">{notice}</div>}
+      {showCongrats && (
+        <div className="congrats-banner bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-2 rounded-lg">
+          🎉 Congratulations, you have completed a milestone!
+        </div>
+      )}
+
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-xl font-bold">Welcome, {auth.name}</h1>
@@ -191,16 +212,26 @@ export const Dashboard = () => {
           </ResponsiveContainer>
         </section>
 
-        <section className="bg-white rounded-xl p-4 shadow h-72">
-          <h2 className="font-semibold mb-2">Avg Progress by Employee</h2>
-          <ResponsiveContainer width="100%" height="90%">
-            <BarChart data={barData}>
-              <XAxis dataKey="userId" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="progress" fill="#0ea5e9" />
-            </BarChart>
-          </ResponsiveContainer>
+        <section className="bg-white rounded-xl p-4 shadow overflow-auto">
+          <h2 className="font-semibold mb-2">Milestone Summary</h2>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left border-b">
+                <th className="py-2">Milestone</th>
+                <th className="py-2">Status</th>
+                <th className="py-2">Progress</th>
+              </tr>
+            </thead>
+            <tbody>
+              {milestones.map((m) => (
+                <tr key={m.id} className={`border-b ${statusRowClass(m.status)}`}>
+                  <td className="py-2">{m.title}</td>
+                  <td className="py-2 capitalize">{m.status.replace('_', ' ')}</td>
+                  <td className="py-2">{m.progress}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </section>
       </div>
 
@@ -215,7 +246,9 @@ export const Dashboard = () => {
             if (!draft) return null;
             return (
               <div key={m.id} className="border rounded p-3 space-y-2">
+                <label className="block text-xs font-medium text-slate-600">Title</label>
                 <input value={draft.title} onChange={(e) => patchDraft(m.id, 'title', e.target.value)} className="w-full border rounded p-2" />
+                <label className="block text-xs font-medium text-slate-600">Description</label>
                 <textarea value={draft.description} onChange={(e) => patchDraft(m.id, 'description', e.target.value)} className="w-full border rounded p-2" rows={2} />
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   <input type="date" value={draft.due_date} onChange={(e) => patchDraft(m.id, 'due_date', e.target.value)} className="border rounded p-2" />
@@ -242,10 +275,10 @@ export const Dashboard = () => {
       <form onSubmit={submitNl} className="bg-white rounded-xl p-4 shadow space-y-2">
         <h2 className="font-semibold">Natural language update</h2>
         <ol className="list-decimal list-inside text-sm text-slate-600 space-y-1">
-          <li>Type an update sentence (example: <span className="font-mono">Update milestone m_emp1_1 to 80%</span>).</li>
-          <li>Click <strong>Submit NLP Event</strong>.</li>
-          <li>The app parses percent and milestone id; if no id is provided, it updates the first milestone.</li>
-          <li>Each request is idempotent by client event id, so duplicate event IDs are safely ignored.</li>
+          <li>Type update text using milestone ID or title (examples below).</li>
+          <li>Examples: <span className="font-mono">Update milestone m_emp1_1 to 80%</span> or <span className="font-mono">update status of Launch onboarding revamp to completed</span>.</li>
+          <li>Click <strong>Submit NLP Event</strong>; the summary table and chart update automatically.</li>
+          <li>Duplicate client event IDs are ignored for safety (idempotent behavior).</li>
         </ol>
         <input value={nlText} onChange={(e) => setNlText(e.target.value)} className="w-full border rounded p-2" />
         <button className="bg-blue-600 text-white px-3 py-2 rounded">Submit NLP Event</button>
@@ -260,3 +293,10 @@ const Kpi = ({ title, value }: { title: string; value: string | number }) => (
     <p className="text-xl font-semibold">{value}</p>
   </div>
 );
+
+const statusRowClass = (status: string) => {
+  if (status === 'overdue') return 'bg-red-50 text-red-800';
+  if (status === 'completed') return 'bg-green-50 text-green-800';
+  if (status === 'in_progress') return 'bg-amber-50 text-amber-800';
+  return 'bg-slate-50 text-slate-700';
+};

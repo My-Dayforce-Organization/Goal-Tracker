@@ -105,21 +105,37 @@ def ingest_nl(
     if existing:
         return {"status": "duplicate", "event_id": existing.id}
 
-    progress_value, parsed_milestone_id = nlp_service.parse(payload.text)
+    parsed = nlp_service.parse(payload.text)
     milestones = milestone_service.list_for_user(current_user, payload.user_id)
     if not milestones:
         raise HTTPException(status_code=404, detail="No milestones for user")
 
-    target = next((m for m in milestones if m.id == parsed_milestone_id), milestones[0])
-    target.progress = min(progress_value if progress_value > 0 else target.progress + 10, 100)
-    updated = milestone_service.update(current_user, target.id, MilestoneUpdate(progress=target.progress))
+    parsed_milestone_id = parsed.get("milestone_id")
+    parsed_title = (parsed.get("milestone_title") or "").strip()
+    progress_value = parsed.get("progress")
+    status_value = parsed.get("status")
+
+    target = next((m for m in milestones if m.id == parsed_milestone_id), None)
+    if not target and parsed_title:
+        target = next((m for m in milestones if parsed_title.lower() in m.title.lower()), None)
+    if not target:
+        target = milestones[0]
+
+    next_progress = target.progress
+    if isinstance(progress_value, int):
+        next_progress = min(max(progress_value, 0), 100)
+    elif status_value == "completed":
+        next_progress = 100
+
+    update_payload = MilestoneUpdate(progress=next_progress, status=status_value)
+    updated = milestone_service.update(current_user, target.id, update_payload)
 
     event = NLEvent(
         id=f"e_{uuid4().hex[:10]}",
         user_id=payload.user_id,
         client_event_id=payload.client_event_id,
         text=payload.text,
-        parsed_progress_delta=progress_value,
+        parsed_progress_delta=progress_value or 0,
         parsed_milestone_id=parsed_milestone_id,
         created_at=datetime.now(timezone.utc),
     )

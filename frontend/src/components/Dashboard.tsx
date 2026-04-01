@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { Dashboard as DashboardType, Milestone } from '../types';
 
-const COLORS = ['#16a34a', '#dc2626', '#0ea5e9'];
+const COLORS = ['#86efac', '#fecaca', '#bfdbfe'];
 
 const STATUS_OPTIONS = [
   { value: 'not_started', label: 'Not started' },
@@ -30,6 +30,7 @@ export const Dashboard = () => {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [showCongrats, setShowCongrats] = useState(false);
+  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   const getScopedUserId = () => (auth?.role === 'manager' ? 'u_emp_1' : auth?.userId);
@@ -61,7 +62,12 @@ export const Dashboard = () => {
       setMilestones(milestoneData);
       buildDrafts(milestoneData);
       setDashboard(dashboardData);
-      setShowCongrats(milestoneData.some((m: Milestone) => m.progress >= 100));
+      const newCompletedIds = new Set((milestoneData as Milestone[]).filter((m) => m.progress >= 100).map((m) => m.id));
+      const hasNewCompletion = [...newCompletedIds].some((id) => !completedIds.has(id));
+      if (hasNewCompletion) {
+        setShowCongrats(true);
+      }
+      setCompletedIds(newCompletedIds);
     } catch {
       setError('Could not load dashboard data. Verify backend is reachable and refresh.');
     } finally {
@@ -79,12 +85,30 @@ export const Dashboard = () => {
     return () => clearTimeout(timer);
   }, [notice]);
 
+  useEffect(() => {
+    if (!showCongrats) return;
+    const timer = setTimeout(() => setShowCongrats(false), 2800);
+    return () => clearTimeout(timer);
+  }, [showCongrats]);
+
   const patchDraft = (milestoneId: string, key: keyof MilestoneDraft, value: string | number) => {
     setDrafts((prev) => ({
       ...prev,
       [milestoneId]: {
         ...prev[milestoneId],
         [key]: value,
+      },
+    }));
+  };
+
+  const handleProgressChange = (milestoneId: string, progress: number) => {
+    const nextStatus = progress >= 100 ? 'completed' : progress <= 0 ? 'not_started' : 'in_progress';
+    setDrafts((prev) => ({
+      ...prev,
+      [milestoneId]: {
+        ...prev[milestoneId],
+        progress,
+        status: nextStatus,
       },
     }));
   };
@@ -226,7 +250,7 @@ export const Dashboard = () => {
               {milestones.map((m) => (
                 <tr key={m.id} className={`border-b ${statusRowClass(m.status)}`}>
                   <td className="py-2">{m.title}</td>
-                  <td className="py-2 capitalize">{m.status.replace('_', ' ')}</td>
+                  <td className="py-2 capitalize">{m.status.replaceAll('_', ' ')}</td>
                   <td className="py-2">{m.progress}%</td>
                 </tr>
               ))}
@@ -258,7 +282,7 @@ export const Dashboard = () => {
                     ))}
                   </select>
                   <div className="flex items-center gap-2">
-                    <input type="range" min={0} max={100} value={draft.progress} onChange={(e) => patchDraft(m.id, 'progress', Number(e.target.value))} className="w-full" />
+                    <input type="range" min={0} max={100} value={draft.progress} onChange={(e) => handleProgressChange(m.id, Number(e.target.value))} className="w-full" />
                     <span className="text-sm w-12">{draft.progress}%</span>
                   </div>
                 </div>

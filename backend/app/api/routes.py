@@ -112,12 +112,17 @@ def ingest_nl(
 
     parsed_milestone_id = parsed.get("milestone_id")
     parsed_title = (parsed.get("milestone_title") or "").strip()
+    parsed_index = parsed.get("milestone_index")
     progress_value = parsed.get("progress")
     status_value = parsed.get("status")
 
     target = next((m for m in milestones if m.id == parsed_milestone_id), None)
     if not target and parsed_title:
         target = next((m for m in milestones if parsed_title.lower() in m.title.lower()), None)
+    if not target and isinstance(parsed_index, int):
+        sorted_milestones = sorted(milestones, key=lambda m: m.created_at)
+        if 1 <= parsed_index <= len(sorted_milestones):
+            target = sorted_milestones[parsed_index - 1]
     if not target:
         target = milestones[0]
 

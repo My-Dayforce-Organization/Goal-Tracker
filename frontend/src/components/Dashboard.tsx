@@ -11,16 +11,26 @@ export const Dashboard = () => {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [dashboard, setDashboard] = useState<DashboardType | null>(null);
   const [nlText, setNlText] = useState('Update milestone m_emp1_1 to 65%');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const load = async () => {
     if (!auth) return;
-    const milestoneUserId = auth.role === 'manager' ? 'u_emp_1' : auth.userId;
-    const [{ data: milestoneData }, { data: dashboardData }] = await Promise.all([
-      api.get(`/users/${milestoneUserId}/milestones`),
-      api.get('/dashboard'),
-    ]);
-    setMilestones(milestoneData);
-    setDashboard(dashboardData);
+    setLoading(true);
+    setError(null);
+    try {
+      const milestoneUserId = auth.role === 'manager' ? 'u_emp_1' : auth.userId;
+      const [{ data: milestoneData }, { data: dashboardData }] = await Promise.all([
+        api.get(`/users/${milestoneUserId}/milestones`),
+        api.get('/dashboard'),
+      ]);
+      setMilestones(milestoneData);
+      setDashboard(dashboardData);
+    } catch {
+      setError('Could not load dashboard data. Verify backend is reachable and refresh.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -28,35 +38,64 @@ export const Dashboard = () => {
   }, [auth?.userId]);
 
   const updateProgress = async (id: string, progress: number) => {
-    await api.put(`/milestones/${id}`, { progress });
-    await load();
+    try {
+      await api.put(`/milestones/${id}`, { progress });
+      await load();
+    } catch {
+      setError('Failed to update milestone progress.');
+    }
   };
 
   const createMilestone = async () => {
     if (!auth) return;
-    await api.post('/milestones', {
-      user_id: auth.role === 'manager' ? 'u_emp_1' : auth.userId,
-      title: `New milestone ${new Date().toLocaleTimeString()}`,
-      description: 'Created from demo UI',
-      due_date: new Date(Date.now() + 10 * 86400000).toISOString(),
-      progress: 0,
-    });
-    await load();
+    try {
+      await api.post('/milestones', {
+        user_id: auth.role === 'manager' ? 'u_emp_1' : auth.userId,
+        title: `New milestone ${new Date().toLocaleTimeString()}`,
+        description: 'Created from demo UI',
+        due_date: new Date(Date.now() + 10 * 86400000).toISOString(),
+        progress: 0,
+      });
+      await load();
+    } catch {
+      setError('Failed to create milestone.');
+    }
   };
 
   const submitNl = async (e: FormEvent) => {
     e.preventDefault();
     if (!auth) return;
-    const targetUser = auth.role === 'manager' ? 'u_emp_1' : auth.userId;
-    await api.post('/nl/ingest', {
-      user_id: targetUser,
-      client_event_id: `ui-${Date.now()}`,
-      text: nlText,
-    });
-    await load();
+    try {
+      const targetUser = auth.role === 'manager' ? 'u_emp_1' : auth.userId;
+      await api.post('/nl/ingest', {
+        user_id: targetUser,
+        client_event_id: `ui-${Date.now()}`,
+        text: nlText,
+      });
+      await load();
+    } catch {
+      setError('Failed to process natural language update.');
+    }
   };
 
-  if (!auth || !dashboard) return null;
+  if (!auth) return null;
+
+  if (loading) {
+    return <div className="min-h-screen p-6 text-slate-600">Loading dashboard…</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen p-6 space-y-3">
+        <h1 className="text-xl font-semibold">Dashboard unavailable</h1>
+        <p className="text-red-600">{error}</p>
+        <p className="text-sm text-slate-600">Backend docs: <a className="underline" href="/api/docs" target="_blank" rel="noreferrer">/api/docs</a></p>
+        <button onClick={load} className="bg-blue-600 text-white px-3 py-2 rounded">Retry</button>
+      </div>
+    );
+  }
+
+  if (!dashboard) return null;
 
   const pieData = [
     { name: 'Completed', value: dashboard.completed_milestones },

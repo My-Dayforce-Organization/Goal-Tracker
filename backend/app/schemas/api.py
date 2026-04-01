@@ -31,6 +31,7 @@ class MilestoneUpdate(BaseModel):
     due_date: datetime | None = None
     progress: int | None = Field(default=None, ge=0, le=100)
     approved: bool | None = None
+    status: str | None = Field(default=None, pattern='^(not_started|in_progress|completed|overdue)$')
 
 
 class NLIngestRequest(BaseModel):

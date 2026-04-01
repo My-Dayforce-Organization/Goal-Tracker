@@ -6,13 +6,36 @@ import { Dashboard as DashboardType, Milestone } from '../types';
 
 const COLORS = ['#16a34a', '#dc2626', '#0ea5e9'];
 
+type MilestoneDraft = {
+  title: string;
+  description: string;
+  due_date: string;
+  progress: number;
+  status: string;
+};
+
 export const Dashboard = () => {
   const { auth, logout } = useAuth();
   const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [drafts, setDrafts] = useState<Record<string, MilestoneDraft>>({});
   const [dashboard, setDashboard] = useState<DashboardType | null>(null);
   const [nlText, setNlText] = useState('Update milestone m_emp1_1 to 65%');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const buildDrafts = (items: Milestone[]) => {
+    const next: Record<string, MilestoneDraft> = {};
+    items.forEach((m) => {
+      next[m.id] = {
+        title: m.title,
+        description: m.description,
+        due_date: m.due_date.slice(0, 10),
+        progress: m.progress,
+        status: m.status,
+      };
+    });
+    setDrafts(next);
+  };
 
   const load = async () => {
     if (!auth) return;
@@ -25,6 +48,7 @@ export const Dashboard = () => {
         api.get('/dashboard'),
       ]);
       setMilestones(milestoneData);
+      buildDrafts(milestoneData);
       setDashboard(dashboardData);
     } catch {
       setError('Could not load dashboard data. Verify backend is reachable and refresh.');
@@ -37,12 +61,30 @@ export const Dashboard = () => {
     load();
   }, [auth?.userId]);
 
-  const updateProgress = async (id: string, progress: number) => {
+  const patchDraft = (milestoneId: string, key: keyof MilestoneDraft, value: string | number) => {
+    setDrafts((prev) => ({
+      ...prev,
+      [milestoneId]: {
+        ...prev[milestoneId],
+        [key]: value,
+      },
+    }));
+  };
+
+  const saveMilestone = async (milestoneId: string) => {
+    const draft = drafts[milestoneId];
+    if (!draft) return;
     try {
-      await api.put(`/milestones/${id}`, { progress });
+      await api.put(`/milestones/${milestoneId}`, {
+        title: draft.title,
+        description: draft.description,
+        due_date: new Date(draft.due_date).toISOString(),
+        progress: Number(draft.progress),
+        status: draft.status,
+      });
       await load();
     } catch {
-      setError('Failed to update milestone progress.');
+      setError('Failed to save milestone changes.');
     }
   };
 
@@ -80,9 +122,7 @@ export const Dashboard = () => {
 
   if (!auth) return null;
 
-  if (loading) {
-    return <div className="min-h-screen p-6 text-slate-600">Loading dashboard…</div>;
-  }
+  if (loading) return <div className="min-h-screen p-6 text-slate-600">Loading dashboard…</div>;
 
   if (error) {
     return (
@@ -153,15 +193,31 @@ export const Dashboard = () => {
           <h2 className="font-semibold">Milestones</h2>
           <button onClick={createMilestone} className="bg-green-600 text-white px-3 py-1 rounded">Add</button>
         </div>
-        <div className="space-y-2">
-          {milestones.map((m) => (
-            <div key={m.id} className="border rounded p-3">
-              <p className="font-medium">{m.title}</p>
-              <p className="text-xs text-slate-500">Due: {new Date(m.due_date).toLocaleDateString()} • Status: {m.status}</p>
-              <input type="range" min={0} max={100} value={m.progress} onChange={(e) => updateProgress(m.id, Number(e.target.value))} className="w-full" />
-              <p className="text-sm">Progress: {m.progress}%</p>
-            </div>
-          ))}
+        <div className="space-y-3">
+          {milestones.map((m) => {
+            const draft = drafts[m.id];
+            if (!draft) return null;
+            return (
+              <div key={m.id} className="border rounded p-3 space-y-2">
+                <input value={draft.title} onChange={(e) => patchDraft(m.id, 'title', e.target.value)} className="w-full border rounded p-2" />
+                <textarea value={draft.description} onChange={(e) => patchDraft(m.id, 'description', e.target.value)} className="w-full border rounded p-2" rows={2} />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  <input type="date" value={draft.due_date} onChange={(e) => patchDraft(m.id, 'due_date', e.target.value)} className="border rounded p-2" />
+                  <select value={draft.status} onChange={(e) => patchDraft(m.id, 'status', e.target.value)} className="border rounded p-2">
+                    <option value="not_started">not_started</option>
+                    <option value="in_progress">in_progress</option>
+                    <option value="completed">completed</option>
+                    <option value="overdue">overdue</option>
+                  </select>
+                  <div className="flex items-center gap-2">
+                    <input type="range" min={0} max={100} value={draft.progress} onChange={(e) => patchDraft(m.id, 'progress', Number(e.target.value))} className="w-full" />
+                    <span className="text-sm w-12">{draft.progress}%</span>
+                  </div>
+                </div>
+                <button onClick={() => saveMilestone(m.id)} className="bg-blue-600 text-white px-3 py-1 rounded">Save Changes</button>
+              </div>
+            );
+          })}
         </div>
       </section>
 

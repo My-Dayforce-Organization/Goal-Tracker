@@ -50,7 +50,10 @@ class MilestoneService:
         update_data = payload.model_dump(exclude_none=True)
         for key, value in update_data.items():
             setattr(milestone, key, value)
-        milestone.status = self._derive_status(milestone.progress, milestone.due_date)
+        if payload.status is not None:
+            milestone.status = payload.status
+        else:
+            milestone.status = self._derive_status(milestone.progress, milestone.due_date)
         milestone.updated_at = datetime.now(timezone.utc)
         self.storage.save_milestone(milestone)
         if payload.approved and current_user.role == "manager":

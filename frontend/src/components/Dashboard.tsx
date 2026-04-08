@@ -5,6 +5,7 @@ import { api } from '../services/api';
 import { Dashboard as DashboardType, Milestone } from '../types';
 
 const COLORS = ['#86efac', '#fecaca', '#bfdbfe'];
+const CHAT_KEY = 'milestone_chat_history';
 
 const STATUS_OPTIONS = [
   { value: 'not_started', label: 'Not started' },
@@ -21,17 +22,27 @@ type MilestoneDraft = {
   status: string;
 };
 
+type ChatMessage = {
+  id: string;
+  role: 'user' | 'assistant';
+  text: string;
+  collapsed: boolean;
+};
+
 export const Dashboard = () => {
   const { auth, logout } = useAuth();
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [drafts, setDrafts] = useState<Record<string, MilestoneDraft>>({});
   const [editing, setEditing] = useState<Record<string, boolean>>({});
   const [dashboard, setDashboard] = useState<DashboardType | null>(null);
-  const [nlText, setNlText] = useState('update status of Launch onboarding revamp to completed');
+  const [chatInput, setChatInput] = useState('');
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
+    const raw = sessionStorage.getItem(CHAT_KEY);
+    return raw ? (JSON.parse(raw) as ChatMessage[]) : [];
+  });
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [showCongrats, setShowCongrats] = useState(false);
-  const [aiResponse, setAiResponse] = useState<string>('');
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
@@ -65,11 +76,10 @@ export const Dashboard = () => {
       setMilestones(milestoneData);
       buildDrafts(milestoneData);
       setDashboard(dashboardData);
+
       const newCompletedIds = new Set((milestoneData as Milestone[]).filter((m) => m.progress >= 100).map((m) => m.id));
       const hasNewCompletion = [...newCompletedIds].some((id) => !completedIds.has(id));
-      if (hasNewCompletion) {
-        setShowCongrats(true);
-      }
+      if (hasNewCompletion) setShowCongrats(true);
       setCompletedIds(newCompletedIds);
     } catch {
       setError('Could not load dashboard data. Verify backend is reachable and refresh.');
@@ -94,26 +104,17 @@ export const Dashboard = () => {
     return () => clearTimeout(timer);
   }, [showCongrats]);
 
+  useEffect(() => {
+    sessionStorage.setItem(CHAT_KEY, JSON.stringify(chatMessages));
+  }, [chatMessages]);
+
   const patchDraft = (milestoneId: string, key: keyof MilestoneDraft, value: string | number) => {
-    setDrafts((prev) => ({
-      ...prev,
-      [milestoneId]: {
-        ...prev[milestoneId],
-        [key]: value,
-      },
-    }));
+    setDrafts((prev) => ({ ...prev, [milestoneId]: { ...prev[milestoneId], [key]: value } }));
   };
 
   const handleProgressChange = (milestoneId: string, progress: number) => {
     const nextStatus = progress >= 100 ? 'completed' : progress <= 0 ? 'not_started' : 'in_progress';
-    setDrafts((prev) => ({
-      ...prev,
-      [milestoneId]: {
-        ...prev[milestoneId],
-        progress,
-        status: nextStatus,
-      },
-    }));
+    setDrafts((prev) => ({ ...prev, [milestoneId]: { ...prev[milestoneId], progress, status: nextStatus } }));
   };
 
   const saveMilestone = async (milestoneId: string) => {
@@ -161,58 +162,87 @@ export const Dashboard = () => {
     }
   };
 
-  const submitNl = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!auth) return;
+  const submitNl = async (text: string) => {
+    if (!auth) return false;
     try {
       await api.post('/nl/ingest', {
         user_id: getScopedUserId(),
         client_event_id: `ui-${Date.now()}`,
-        text: nlText,
+        text,
       });
       setNotice('Natural language update applied.');
       await load(false);
+      return true;
     } catch {
       setError('Failed to process natural language update.');
+      return false;
     }
   };
 
-  const handleAskAi = async () => {
-    const question = nlText.trim();
-    if (!question) return;
-
+  const generateSummary = (question: string) => {
     const q = question.toLowerCase();
     const completed = milestones.filter((m) => m.status === 'completed');
     const overdue = milestones.filter((m) => m.status === 'overdue');
-    const inProgress = milestones.filter((m) => m.status === 'in_progress');
+    const pending = milestones.filter((m) => m.status !== 'completed');
 
-    if (q.includes('update') || q.includes('status of') || q.includes('%') || q.includes('milestone')) {
-      await submitNl({ preventDefault: () => {} } as FormEvent);
-      setAiResponse('I applied your update request and refreshed the dashboard.');
-      return;
+    if (q.includes('due date')) {
+      return milestones.length
+        ? milestones.map((m) => `${m.title}: ${new Date(m.due_date).toLocaleDateString()}`).join(' | ')
+        : 'No milestones found.';
     }
-
+    if (q.includes('description')) {
+      return milestones.length
+        ? milestones.map((m) => `${m.title}: ${m.description || 'No description'}`).join(' | ')
+        : 'No milestone descriptions available.';
+    }
+    if (q.includes('pending')) {
+      return pending.length
+        ? `Pending actions (${pending.length}): ${pending.map((m) => m.title).join(', ')}.`
+        : 'No pending actions. Everything is completed.';
+    }
+    if (q.includes('status')) {
+      return milestones.length
+        ? milestones.map((m) => `${m.title} is ${m.status.replaceAll('_', ' ')}`).join(' | ')
+        : 'No status data available.';
+    }
     if (q.includes('overdue')) {
-      setAiResponse(
-        overdue.length
-          ? `You have ${overdue.length} overdue milestone(s): ${overdue.map((m) => m.title).join(', ')}.`
-          : 'Great news — there are no overdue milestones right now.'
-      );
-      return;
+      return overdue.length ? `Overdue: ${overdue.map((m) => m.title).join(', ')}.` : 'No overdue milestones right now.';
     }
-
     if (q.includes('completed')) {
-      setAiResponse(
-        completed.length
-          ? `Completed milestones (${completed.length}): ${completed.map((m) => m.title).join(', ')}.`
-          : 'No milestones are completed yet.'
-      );
-      return;
+      return completed.length ? `Completed: ${completed.map((m) => m.title).join(', ')}.` : 'No completed milestones yet.';
     }
 
-    setAiResponse(
-      `Summary: Total ${dashboard?.total_milestones ?? milestones.length}, Completed ${completed.length}, In Progress ${inProgress.length}, Overdue ${overdue.length}, Avg Progress ${dashboard?.average_progress ?? 0}%.`
-    );
+    return `Summary: Total ${dashboard?.total_milestones ?? milestones.length}, Completed ${completed.length}, Overdue ${overdue.length}, Avg Progress ${dashboard?.average_progress ?? 0}%.`;
+  };
+
+  const handleAskAi = async (e: FormEvent) => {
+    e.preventDefault();
+    const question = chatInput.trim();
+    if (!question) return;
+
+    setChatMessages((prev) => [...prev, { id: `u-${Date.now()}`, role: 'user', text: question, collapsed: false }]);
+
+    const maybeUpdate = question.toLowerCase().includes('update') || question.includes('%') || question.toLowerCase().includes('milestone');
+    if (maybeUpdate) {
+      const updated = await submitNl(question);
+      setChatMessages((prev) => [
+        ...prev,
+        { id: `a-${Date.now()}`, role: 'assistant', text: updated ? 'Done. I updated the milestone and refreshed the dashboard.' : 'I could not process that update. Please try rephrasing.', collapsed: true },
+      ]);
+    } else {
+      const answer = generateSummary(question);
+      setChatMessages((prev) => [...prev, { id: `a-${Date.now()}`, role: 'assistant', text: answer, collapsed: true }]);
+    }
+    setChatInput('');
+  };
+
+  const toggleMessage = (id: string) => {
+    setChatMessages((prev) => prev.map((m) => (m.id === id ? { ...m, collapsed: !m.collapsed } : m)));
+  };
+
+  const resetChat = () => {
+    setChatMessages([]);
+    sessionStorage.removeItem(CHAT_KEY);
   };
 
   const pieData = useMemo(() => {
@@ -243,11 +273,7 @@ export const Dashboard = () => {
   return (
     <div className="min-h-screen p-4 md:p-8 space-y-4 relative">
       {notice && <div className="fixed top-4 right-4 bg-emerald-600 text-white px-4 py-2 rounded shadow-lg z-50">{notice}</div>}
-      {showCongrats && (
-        <div className="congrats-banner bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-2 rounded-lg">
-          🎉 Congratulations, you have completed a milestone!
-        </div>
-      )}
+      {showCongrats && <div className="congrats-banner bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-2 rounded-lg">🎉 Congratulations, you have completed a milestone!</div>}
 
       <div className="flex justify-between items-center">
         <div>
@@ -315,12 +341,8 @@ export const Dashboard = () => {
                 <div className="flex justify-between items-center">
                   <p className="font-medium">{m.title}</p>
                   <div className="flex gap-2">
-                    <button onClick={() => setEditing((prev) => ({ ...prev, [m.id]: !prev[m.id] }))} className="text-slate-600 border rounded px-2 py-1" title="Edit" aria-label="Edit">
-                      ✏️
-                    </button>
-                    <button onClick={() => deleteMilestone(m.id)} className="text-red-600 border border-red-200 rounded px-2 py-1" title="Delete" aria-label="Delete">
-                      🗑️
-                    </button>
+                    <button onClick={() => setEditing((prev) => ({ ...prev, [m.id]: !prev[m.id] }))} className="text-slate-600 border rounded px-2 py-1" title="Edit" aria-label="Edit">✏️</button>
+                    <button onClick={() => deleteMilestone(m.id)} className="text-red-600 border border-red-200 rounded px-2 py-1" title="Delete" aria-label="Delete">🗑️</button>
                   </div>
                 </div>
 
@@ -358,22 +380,47 @@ export const Dashboard = () => {
         </div>
       </section>
 
-      <form onSubmit={(e) => { e.preventDefault(); void handleAskAi(); }} className="rounded-2xl p-5 shadow text-white w-full md:w-1/2" style={{ background: 'linear-gradient(90deg, #0d67d8 0%, #1d88e5 100%)' }}>
-        <div className="bg-white/90 rounded-2xl p-6 text-slate-900 space-y-3">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <div>
-              <h2 className="text-2xl font-semibold leading-tight">How can I help you today?</h2>
-              <p className="text-base text-slate-600 mt-1">Update and complete tasks with AI Assistant.</p>
-            </div>
-            <button type="button" onClick={() => void handleAskAi()} className="self-start md:self-center inline-flex items-center gap-2 bg-white border border-slate-300 rounded-full px-5 py-2 text-base font-semibold hover:bg-slate-50">
-              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-500 text-white">✦</span>
-              Ask AI
-            </button>
+      <section className="rounded-2xl p-2 shadow text-white w-full md:w-1/2" style={{ background: 'linear-gradient(90deg, #0d67d8 0%, #1d88e5 100%)' }}>
+        <div className="bg-white/90 rounded-2xl p-4 text-slate-900 space-y-3">
+          <div className="flex items-center justify-between border-b pb-2">
+            <button onClick={resetChat} className="font-semibold text-sm">＋ New chat</button>
+            <span className="text-xl">−</span>
           </div>
-          <input value={nlText} onChange={(e) => setNlText(e.target.value)} className="w-full border rounded-xl p-3 text-base" placeholder="Ask for summary or request an update" />
-          {aiResponse && <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-sm text-slate-700">{aiResponse}</div>}
+
+          <div className="text-center py-2">
+            <div className="text-2xl">✦ ✦</div>
+            <h2 className="text-lg font-semibold">How can I help you today?</h2>
+            <p className="text-xs text-slate-600">Get answers and complete tasks with AI Assistant.</p>
+          </div>
+
+          <div className="space-y-2 max-h-64 overflow-auto pr-1">
+            {chatMessages.map((msg) => (
+              <div key={msg.id} className={msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
+                <div className={msg.role === 'user' ? 'bg-blue-100 rounded-2xl px-3 py-2 max-w-[85%] text-sm' : 'bg-slate-100 rounded-2xl px-3 py-2 max-w-[85%] text-sm'}>
+                  <p className={msg.collapsed ? 'line-clamp-2' : ''}>{msg.text}</p>
+                  <button onClick={() => toggleMessage(msg.id)} className="text-xs text-slate-500 underline mt-1">
+                    {msg.collapsed ? 'Expand' : 'Collapse'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <form onSubmit={handleAskAi} className="space-y-2">
+            <textarea
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value.slice(0, 200))}
+              className="w-full border border-blue-400 rounded-xl p-3 text-sm"
+              rows={3}
+              placeholder="Message"
+            />
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-slate-500">{chatInput.length}/200</p>
+              <button className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm">Send ➤</button>
+            </div>
+          </form>
         </div>
-      </form>
+      </section>
     </div>
   );
 };

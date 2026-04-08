@@ -319,16 +319,20 @@ export const Dashboard = () => {
         </div>
       </section>
 
-      <form onSubmit={submitNl} className="bg-white rounded-xl p-4 shadow space-y-2">
-        <h2 className="font-semibold">Natural language update</h2>
-        <ol className="list-decimal list-inside text-sm text-slate-600 space-y-1">
-          <li>Type update text using milestone ID or title (examples below).</li>
-          <li>Examples: <span className="font-mono">Update milestone m_emp1_1 to 80%</span> or <span className="font-mono">update status of Launch onboarding revamp to completed</span>.</li>
-          <li>Click <strong>Submit NLP Event</strong>; the summary table and chart update automatically.</li>
-          <li>Duplicate client event IDs are ignored for safety (idempotent behavior).</li>
-        </ol>
-        <input value={nlText} onChange={(e) => setNlText(e.target.value)} className="w-full border rounded p-2" />
-        <button className="bg-blue-600 text-white px-3 py-2 rounded">Submit NLP Event</button>
+      <form onSubmit={submitNl} className="rounded-2xl p-5 shadow text-white" style={{ background: 'linear-gradient(90deg, #0d67d8 0%, #1d88e5 100%)' }}>
+        <div className="bg-white/90 rounded-2xl p-6 text-slate-900 space-y-3">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <h2 className="text-4xl font-semibold leading-tight">How can I help you today?</h2>
+              <p className="text-2xl text-slate-600 mt-1">Update and complete tasks with AI Assistant.</p>
+            </div>
+            <button className="self-start md:self-center inline-flex items-center gap-2 bg-white border border-slate-300 rounded-full px-5 py-2 text-xl font-semibold hover:bg-slate-50">
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-500 text-white">✦</span>
+              Ask AI
+            </button>
+          </div>
+          <input value={nlText} onChange={(e) => setNlText(e.target.value)} className="w-full border rounded-xl p-3 text-lg" placeholder="Try: update status of Launch onboarding revamp to completed" />
+        </div>
       </form>
     </div>
   );

@@ -1,37 +1,9 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Pie, PieChart, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
+
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { Dashboard as DashboardType, Milestone } from '../types';
-
-const COLORS = ['#86efac', '#fecaca', '#bfdbfe'];
-const CHAT_KEY = 'milestone_chat_history';
-
-const loadChatFromSession = (): ChatMessage[] => {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = window.sessionStorage.getItem(CHAT_KEY);
-    return raw ? (JSON.parse(raw) as ChatMessage[]) : [];
-  } catch {
-    return [];
-  }
-};
-
-const saveChatToSession = (messages: ChatMessage[]) => {
-  if (typeof window === 'undefined') return;
-  try {
-    window.sessionStorage.setItem(CHAT_KEY, JSON.stringify(messages));
-  } catch {
-    // ignore storage errors
-  }
-};
-
-const STATUS_OPTIONS = [
-  { value: 'not_started', label: 'Not started' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'overdue', label: 'Overdue' },
-];
 
 type MilestoneDraft = {
   title: string;
@@ -48,89 +20,138 @@ type ChatMessage = {
   collapsed: boolean;
 };
 
+const CHAT_KEY = 'milestone_chat_history';
+const PIE_COLORS = ['#86efac', '#fecaca', '#bfdbfe'];
+
+const STATUS_OPTIONS = [
+  { value: 'not_started', label: 'Not started' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'overdue', label: 'Overdue' },
+];
+
+const loadChatFromSession = (): ChatMessage[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.sessionStorage.getItem(CHAT_KEY);
+    return raw ? (JSON.parse(raw) as ChatMessage[]) : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveChatToSession = (messages: ChatMessage[]): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(CHAT_KEY, JSON.stringify(messages));
+  } catch {
+    // ignore storage failures
+  }
+};
+
 export const Dashboard = () => {
   const { auth, logout } = useAuth();
+
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [drafts, setDrafts] = useState<Record<string, MilestoneDraft>>({});
   const [editing, setEditing] = useState<Record<string, boolean>>({});
   const [dashboard, setDashboard] = useState<DashboardType | null>(null);
+
   const [chatInput, setChatInput] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(loadChatFromSession);
-  const [error, setError] = useState<string | null>(null);
+
   const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [showCongrats, setShowCongrats] = useState(false);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
 
-  const getScopedUserId = () => (auth?.role === 'manager' ? 'u_emp_1' : auth?.userId);
+  const scopedUserId = auth?.role === 'manager' ? 'u_emp_1' : auth?.userId;
 
-  const buildDrafts = (items: Milestone[]) => {
-    const next: Record<string, MilestoneDraft> = {};
+  const syncDrafts = (items: Milestone[]) => {
+    const nextDrafts: Record<string, MilestoneDraft> = {};
+    const nextEditing: Record<string, boolean> = {};
     items.forEach((m) => {
-      next[m.id] = {
+      nextDrafts[m.id] = {
         title: m.title,
         description: m.description,
         due_date: m.due_date.slice(0, 10),
         progress: m.progress,
         status: m.status,
       };
+      nextEditing[m.id] = false;
     });
-    setDrafts(next);
-    setEditing(Object.fromEntries(items.map((m) => [m.id, false])));
+    setDrafts(nextDrafts);
+    setEditing(nextEditing);
   };
 
-  const load = async (showPageLoader = true) => {
-    if (!auth) return;
-    if (showPageLoader) setLoading(true);
-    setError(null);
+  const loadData = async (showSpinner = true) => {
+    if (!auth || !scopedUserId) return;
+    if (showSpinner) setLoading(true);
+
     try {
-      const milestoneUserId = getScopedUserId();
-      const [{ data: milestoneData }, { data: dashboardData }] = await Promise.all([
-        api.get(`/users/${milestoneUserId}/milestones`),
+      setError(null);
+      const [milestoneRes, dashboardRes] = await Promise.all([
+        api.get(`/users/${scopedUserId}/milestones`),
         api.get('/dashboard'),
       ]);
-      setMilestones(milestoneData);
-      buildDrafts(milestoneData);
-      setDashboard(dashboardData);
 
-      const newCompletedIds = new Set((milestoneData as Milestone[]).filter((m) => m.progress >= 100).map((m) => m.id));
-      const hasNewCompletion = [...newCompletedIds].some((id) => !completedIds.has(id));
+      const items = milestoneRes.data as Milestone[];
+      setMilestones(items);
+      setDashboard(dashboardRes.data as DashboardType);
+      syncDrafts(items);
+
+      const newCompleted = new Set(items.filter((m) => m.progress >= 100).map((m) => m.id));
+      const hasNewCompletion = [...newCompleted].some((id) => !completedIds.has(id));
       if (hasNewCompletion) setShowCongrats(true);
-      setCompletedIds(newCompletedIds);
+      setCompletedIds(newCompleted);
     } catch {
       setError('Could not load dashboard data. Verify backend is reachable and refresh.');
     } finally {
-      if (showPageLoader) setLoading(false);
+      if (showSpinner) setLoading(false);
     }
   };
 
   useEffect(() => {
-    load();
+    void loadData();
   }, [auth?.userId]);
-
-  useEffect(() => {
-    if (!notice) return;
-    const timer = setTimeout(() => setNotice(null), 2200);
-    return () => clearTimeout(timer);
-  }, [notice]);
-
-  useEffect(() => {
-    if (!showCongrats) return;
-    const timer = setTimeout(() => setShowCongrats(false), 2800);
-    return () => clearTimeout(timer);
-  }, [showCongrats]);
 
   useEffect(() => {
     saveChatToSession(chatMessages);
   }, [chatMessages]);
 
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(null), 2000);
+    return () => clearTimeout(timer);
+  }, [notice]);
+
+  useEffect(() => {
+    if (!showCongrats) return;
+    const timer = setTimeout(() => setShowCongrats(false), 2500);
+    return () => clearTimeout(timer);
+  }, [showCongrats]);
+
   const patchDraft = (milestoneId: string, key: keyof MilestoneDraft, value: string | number) => {
-    setDrafts((prev) => ({ ...prev, [milestoneId]: { ...prev[milestoneId], [key]: value } }));
+    setDrafts((prev) => ({
+      ...prev,
+      [milestoneId]: {
+        ...prev[milestoneId],
+        [key]: value,
+      },
+    }));
   };
 
-  const handleProgressChange = (milestoneId: string, progress: number) => {
-    const nextStatus = progress >= 100 ? 'completed' : progress <= 0 ? 'not_started' : 'in_progress';
-    setDrafts((prev) => ({ ...prev, [milestoneId]: { ...prev[milestoneId], progress, status: nextStatus } }));
+  const patchProgress = (milestoneId: string, value: number) => {
+    const status = value >= 100 ? 'completed' : value <= 0 ? 'not_started' : 'in_progress';
+    setDrafts((prev) => ({
+      ...prev,
+      [milestoneId]: {
+        ...prev[milestoneId],
+        progress: value,
+        status,
+      },
+    }));
   };
 
   const saveMilestone = async (milestoneId: string) => {
@@ -141,13 +162,13 @@ export const Dashboard = () => {
         title: draft.title,
         description: draft.description,
         due_date: new Date(draft.due_date).toISOString(),
-        progress: Number(draft.progress),
+        progress: draft.progress,
         status: draft.status,
       });
-      setNotice('Milestone changes saved.');
-      await load(false);
+      setNotice('Milestone saved.');
+      await loadData(false);
     } catch {
-      setError('Failed to save milestone changes.');
+      setError('Failed to save milestone.');
     }
   };
 
@@ -155,83 +176,73 @@ export const Dashboard = () => {
     try {
       await api.delete(`/milestones/${milestoneId}`);
       setNotice('Milestone deleted.');
-      await load(false);
+      await loadData(false);
     } catch {
       setError('Failed to delete milestone.');
     }
   };
 
   const createMilestone = async () => {
-    if (!auth) return;
+    if (!scopedUserId) return;
     try {
       await api.post('/milestones', {
-        user_id: getScopedUserId(),
+        user_id: scopedUserId,
         title: `New milestone ${new Date().toLocaleTimeString()}`,
         description: 'Created from demo UI',
         due_date: new Date(Date.now() + 10 * 86400000).toISOString(),
         progress: 0,
       });
       setNotice('Milestone created.');
-      await load(false);
+      await loadData(false);
     } catch {
       setError('Failed to create milestone.');
     }
   };
 
-  const submitNl = async (text: string) => {
-    if (!auth) return false;
+  const sendNlUpdate = async (text: string): Promise<boolean> => {
+    if (!scopedUserId) return false;
     try {
       await api.post('/nl/ingest', {
-        user_id: getScopedUserId(),
+        user_id: scopedUserId,
         client_event_id: `ui-${Date.now()}`,
         text,
       });
-      setNotice('Natural language update applied.');
-      await load(false);
+      await loadData(false);
       return true;
     } catch {
-      setError('Failed to process natural language update.');
       return false;
     }
   };
 
-  const generateSummary = (question: string) => {
+  const answerQuestion = (question: string): string => {
     const q = question.toLowerCase();
     const completed = milestones.filter((m) => m.status === 'completed');
     const overdue = milestones.filter((m) => m.status === 'overdue');
     const pending = milestones.filter((m) => m.status !== 'completed');
 
-    if (q.includes('due date')) {
-      return milestones.length
-        ? milestones.map((m) => `${m.title}: ${new Date(m.due_date).toLocaleDateString()}`).join(' | ')
-        : 'No milestones found.';
+    if (q.includes('status')) {
+      return milestones.map((m) => `${m.title}: ${m.status.replaceAll('_', ' ')}`).join(' | ');
     }
     if (q.includes('description')) {
-      return milestones.length
-        ? milestones.map((m) => `${m.title}: ${m.description || 'No description'}`).join(' | ')
-        : 'No milestone descriptions available.';
+      return milestones.map((m) => `${m.title}: ${m.description || 'No description'}`).join(' | ');
+    }
+    if (q.includes('due') || q.includes('date')) {
+      return milestones.map((m) => `${m.title}: ${new Date(m.due_date).toLocaleDateString()}`).join(' | ');
     }
     if (q.includes('pending')) {
-      return pending.length
-        ? `Pending actions (${pending.length}): ${pending.map((m) => m.title).join(', ')}.`
-        : 'No pending actions. Everything is completed.';
-    }
-    if (q.includes('status')) {
-      return milestones.length
-        ? milestones.map((m) => `${m.title} is ${m.status.replaceAll('_', ' ')}`).join(' | ')
-        : 'No status data available.';
+      return pending.length ? `Pending actions: ${pending.map((m) => m.title).join(', ')}` : 'No pending actions.';
     }
     if (q.includes('overdue')) {
-      return overdue.length ? `Overdue: ${overdue.map((m) => m.title).join(', ')}.` : 'No overdue milestones right now.';
+      return overdue.length ? `Overdue milestones: ${overdue.map((m) => m.title).join(', ')}` : 'No overdue milestones.';
     }
     if (q.includes('completed')) {
-      return completed.length ? `Completed: ${completed.map((m) => m.title).join(', ')}.` : 'No completed milestones yet.';
+      return completed.length ? `Completed milestones: ${completed.map((m) => m.title).join(', ')}` : 'No completed milestones yet.';
     }
 
-    return `Summary: Total ${dashboard?.total_milestones ?? milestones.length}, Completed ${completed.length}, Overdue ${overdue.length}, Avg Progress ${dashboard?.average_progress ?? 0}%.`;
+    return `Summary — Total: ${dashboard?.total_milestones ?? milestones.length}, Completed: ${completed.length}, Overdue: ${overdue.length}, Avg Progress: ${dashboard?.average_progress ?? 0}%.`;
   };
 
-  const handleAskAi = async (e: FormEvent) => {
+  const submitChat = async (e: FormEvent) => {
     e.preventDefault();
     const question = chatInput.trim();
     if (!question) return;
@@ -240,19 +251,18 @@ export const Dashboard = () => {
 
     const maybeUpdate = question.toLowerCase().includes('update') || question.includes('%') || question.toLowerCase().includes('milestone');
     if (maybeUpdate) {
-      const updated = await submitNl(question);
-      setChatMessages((prev) => [
-        ...prev,
-        { id: `a-${Date.now()}`, role: 'assistant', text: updated ? 'Done. I updated the milestone and refreshed the dashboard.' : 'I could not process that update. Please try rephrasing.', collapsed: true },
-      ]);
-    } else {
-      const answer = generateSummary(question);
+      const ok = await sendNlUpdate(question);
+      const answer = ok ? 'Done. I updated the milestone and refreshed the dashboard.' : 'I could not process that update. Try rephrasing.';
       setChatMessages((prev) => [...prev, { id: `a-${Date.now()}`, role: 'assistant', text: answer, collapsed: true }]);
+      setNotice(ok ? 'Natural language update applied.' : 'Natural language update failed.');
+    } else {
+      setChatMessages((prev) => [...prev, { id: `a-${Date.now()}`, role: 'assistant', text: answerQuestion(question), collapsed: true }]);
     }
+
     setChatInput('');
   };
 
-  const toggleMessage = (id: string) => {
+  const toggleChatMessage = (id: string) => {
     setChatMessages((prev) => prev.map((m) => (m.id === id ? { ...m, collapsed: !m.collapsed } : m)));
   };
 
@@ -266,24 +276,24 @@ export const Dashboard = () => {
     return [
       { name: 'Completed', value: dashboard.completed_milestones },
       { name: 'Overdue', value: dashboard.overdue_milestones },
-      { name: 'In Progress', value: Math.max(dashboard.total_milestones - dashboard.completed_milestones - dashboard.overdue_milestones, 0) },
+      {
+        name: 'In Progress',
+        value: Math.max(dashboard.total_milestones - dashboard.completed_milestones - dashboard.overdue_milestones, 0),
+      },
     ];
   }, [dashboard]);
 
   if (!auth) return null;
   if (loading) return <div className="min-h-screen p-6 text-slate-600">Loading dashboard…</div>;
-
   if (error) {
     return (
       <div className="min-h-screen p-6 space-y-3">
         <h1 className="text-xl font-semibold">Dashboard unavailable</h1>
         <p className="text-red-600">{error}</p>
-        <p className="text-sm text-slate-600">Backend docs: <a className="underline" href="/api/docs" target="_blank" rel="noreferrer">/api/docs</a></p>
-        <button onClick={() => load()} className="bg-blue-600 text-white px-3 py-2 rounded">Retry</button>
+        <button onClick={() => void loadData()} className="bg-blue-600 text-white px-3 py-2 rounded">Retry</button>
       </div>
     );
   }
-
   if (!dashboard) return null;
 
   return (
@@ -312,7 +322,7 @@ export const Dashboard = () => {
           <ResponsiveContainer width="100%" height="90%">
             <PieChart>
               <Pie data={pieData} cx="50%" cy="50%" outerRadius={80} dataKey="value">
-                {pieData.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
+                {pieData.map((_, index) => <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />)}
               </Pie>
               <Tooltip />
             </PieChart>
@@ -347,18 +357,20 @@ export const Dashboard = () => {
           <h2 className="font-semibold">Milestones</h2>
           <button onClick={createMilestone} className="bg-green-600 text-white px-3 py-1 rounded">Add</button>
         </div>
+
         <div className="space-y-3">
           {milestones.map((m) => {
             const draft = drafts[m.id];
-            if (!draft) return null;
             const isEditing = editing[m.id];
+            if (!draft) return null;
+
             return (
               <div key={m.id} className="border rounded p-3 space-y-2">
                 <div className="flex justify-between items-center">
                   <p className="font-medium">{m.title}</p>
                   <div className="flex gap-2">
                     <button onClick={() => setEditing((prev) => ({ ...prev, [m.id]: !prev[m.id] }))} className="text-slate-600 border rounded px-2 py-1" title="Edit" aria-label="Edit">✏️</button>
-                    <button onClick={() => deleteMilestone(m.id)} className="text-red-600 border border-red-200 rounded px-2 py-1" title="Delete" aria-label="Delete">🗑️</button>
+                    <button onClick={() => void deleteMilestone(m.id)} className="text-red-600 border border-red-200 rounded px-2 py-1" title="Delete" aria-label="Delete">🗑️</button>
                   </div>
                 </div>
 
@@ -383,11 +395,11 @@ export const Dashboard = () => {
                         ))}
                       </select>
                       <div className="flex items-center gap-2">
-                        <input type="range" min={0} max={100} value={draft.progress} onChange={(e) => handleProgressChange(m.id, Number(e.target.value))} className="w-full" />
+                        <input type="range" min={0} max={100} value={draft.progress} onChange={(e) => patchProgress(m.id, Number(e.target.value))} className="w-full" />
                         <span className="text-sm w-12">{draft.progress}%</span>
                       </div>
                     </div>
-                    <button onClick={() => saveMilestone(m.id)} className="bg-blue-600 text-white px-3 py-1 rounded">Save</button>
+                    <button onClick={() => void saveMilestone(m.id)} className="bg-blue-600 text-white px-3 py-1 rounded">Save</button>
                   </>
                 )}
               </div>
@@ -399,7 +411,7 @@ export const Dashboard = () => {
       <section className="rounded-2xl p-2 shadow text-white w-full md:w-1/2" style={{ background: 'linear-gradient(90deg, #0d67d8 0%, #1d88e5 100%)' }}>
         <div className="bg-white/90 rounded-2xl p-4 text-slate-900 space-y-3">
           <div className="flex items-center justify-between border-b pb-2">
-            <button onClick={resetChat} className="font-semibold text-sm">＋ New chat</button>
+            <button onClick={resetChat} className="font-semibold text-sm">+ New chat</button>
             <span className="text-xl">−</span>
           </div>
 
@@ -410,19 +422,22 @@ export const Dashboard = () => {
           </div>
 
           <div className="space-y-2 max-h-64 overflow-auto pr-1">
-            {chatMessages.map((msg) => (
-              <div key={msg.id} className={msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
-                <div className={msg.role === 'user' ? 'bg-blue-100 rounded-2xl px-3 py-2 max-w-[85%] text-sm' : 'bg-slate-100 rounded-2xl px-3 py-2 max-w-[85%] text-sm'}>
-                  <p>{msg.collapsed && msg.text.length > 180 ? `${msg.text.slice(0, 180)}...` : msg.text}</p>
-                  <button onClick={() => toggleMessage(msg.id)} className="text-xs text-slate-500 underline mt-1">
-                    {msg.collapsed ? 'Expand' : 'Collapse'}
-                  </button>
+            {chatMessages.map((message) => {
+              const preview = message.collapsed && message.text.length > 180 ? `${message.text.slice(0, 180)}...` : message.text;
+              return (
+                <div key={message.id} className={message.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
+                  <div className={message.role === 'user' ? 'bg-blue-100 rounded-2xl px-3 py-2 max-w-[85%] text-sm' : 'bg-slate-100 rounded-2xl px-3 py-2 max-w-[85%] text-sm'}>
+                    <p>{preview}</p>
+                    <button onClick={() => toggleChatMessage(message.id)} className="text-xs text-slate-500 underline mt-1">
+                      {message.collapsed ? 'Expand' : 'Collapse'}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          <form onSubmit={handleAskAi} className="space-y-2">
+          <form onSubmit={submitChat} className="space-y-2">
             <textarea
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value.slice(0, 200))}

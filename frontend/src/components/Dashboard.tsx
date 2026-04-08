@@ -31,6 +31,7 @@ export const Dashboard = () => {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [showCongrats, setShowCongrats] = useState(false);
+  const [aiResponse, setAiResponse] = useState<string>('');
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
@@ -176,6 +177,44 @@ export const Dashboard = () => {
     }
   };
 
+  const handleAskAi = async () => {
+    const question = nlText.trim();
+    if (!question) return;
+
+    const q = question.toLowerCase();
+    const completed = milestones.filter((m) => m.status === 'completed');
+    const overdue = milestones.filter((m) => m.status === 'overdue');
+    const inProgress = milestones.filter((m) => m.status === 'in_progress');
+
+    if (q.includes('update') || q.includes('status of') || q.includes('%') || q.includes('milestone')) {
+      await submitNl({ preventDefault: () => {} } as FormEvent);
+      setAiResponse('I applied your update request and refreshed the dashboard.');
+      return;
+    }
+
+    if (q.includes('overdue')) {
+      setAiResponse(
+        overdue.length
+          ? `You have ${overdue.length} overdue milestone(s): ${overdue.map((m) => m.title).join(', ')}.`
+          : 'Great news — there are no overdue milestones right now.'
+      );
+      return;
+    }
+
+    if (q.includes('completed')) {
+      setAiResponse(
+        completed.length
+          ? `Completed milestones (${completed.length}): ${completed.map((m) => m.title).join(', ')}.`
+          : 'No milestones are completed yet.'
+      );
+      return;
+    }
+
+    setAiResponse(
+      `Summary: Total ${dashboard?.total_milestones ?? milestones.length}, Completed ${completed.length}, In Progress ${inProgress.length}, Overdue ${overdue.length}, Avg Progress ${dashboard?.average_progress ?? 0}%.`
+    );
+  };
+
   const pieData = useMemo(() => {
     if (!dashboard) return [];
     return [
@@ -319,19 +358,20 @@ export const Dashboard = () => {
         </div>
       </section>
 
-      <form onSubmit={submitNl} className="rounded-2xl p-5 shadow text-white" style={{ background: 'linear-gradient(90deg, #0d67d8 0%, #1d88e5 100%)' }}>
+      <form onSubmit={(e) => { e.preventDefault(); void handleAskAi(); }} className="rounded-2xl p-5 shadow text-white w-full md:w-1/2" style={{ background: 'linear-gradient(90deg, #0d67d8 0%, #1d88e5 100%)' }}>
         <div className="bg-white/90 rounded-2xl p-6 text-slate-900 space-y-3">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div>
-              <h2 className="text-4xl font-semibold leading-tight">How can I help you today?</h2>
-              <p className="text-2xl text-slate-600 mt-1">Update and complete tasks with AI Assistant.</p>
+              <h2 className="text-2xl font-semibold leading-tight">How can I help you today?</h2>
+              <p className="text-base text-slate-600 mt-1">Update and complete tasks with AI Assistant.</p>
             </div>
-            <button className="self-start md:self-center inline-flex items-center gap-2 bg-white border border-slate-300 rounded-full px-5 py-2 text-xl font-semibold hover:bg-slate-50">
+            <button type="button" onClick={() => void handleAskAi()} className="self-start md:self-center inline-flex items-center gap-2 bg-white border border-slate-300 rounded-full px-5 py-2 text-base font-semibold hover:bg-slate-50">
               <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-500 text-white">✦</span>
               Ask AI
             </button>
           </div>
-          <input value={nlText} onChange={(e) => setNlText(e.target.value)} className="w-full border rounded-xl p-3 text-lg" placeholder="Try: update status of Launch onboarding revamp to completed" />
+          <input value={nlText} onChange={(e) => setNlText(e.target.value)} className="w-full border rounded-xl p-3 text-base" placeholder="Ask for summary or request an update" />
+          {aiResponse && <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-sm text-slate-700">{aiResponse}</div>}
         </div>
       </form>
     </div>

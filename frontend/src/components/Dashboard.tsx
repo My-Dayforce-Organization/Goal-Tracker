@@ -7,6 +7,25 @@ import { Dashboard as DashboardType, Milestone } from '../types';
 const COLORS = ['#86efac', '#fecaca', '#bfdbfe'];
 const CHAT_KEY = 'milestone_chat_history';
 
+const loadChatFromSession = (): ChatMessage[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.sessionStorage.getItem(CHAT_KEY);
+    return raw ? (JSON.parse(raw) as ChatMessage[]) : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveChatToSession = (messages: ChatMessage[]) => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(CHAT_KEY, JSON.stringify(messages));
+  } catch {
+    // ignore storage errors
+  }
+};
+
 const STATUS_OPTIONS = [
   { value: 'not_started', label: 'Not started' },
   { value: 'in_progress', label: 'In Progress' },
@@ -36,10 +55,7 @@ export const Dashboard = () => {
   const [editing, setEditing] = useState<Record<string, boolean>>({});
   const [dashboard, setDashboard] = useState<DashboardType | null>(null);
   const [chatInput, setChatInput] = useState('');
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
-    const raw = sessionStorage.getItem(CHAT_KEY);
-    return raw ? (JSON.parse(raw) as ChatMessage[]) : [];
-  });
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(loadChatFromSession);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [showCongrats, setShowCongrats] = useState(false);
@@ -105,7 +121,7 @@ export const Dashboard = () => {
   }, [showCongrats]);
 
   useEffect(() => {
-    sessionStorage.setItem(CHAT_KEY, JSON.stringify(chatMessages));
+    saveChatToSession(chatMessages);
   }, [chatMessages]);
 
   const patchDraft = (milestoneId: string, key: keyof MilestoneDraft, value: string | number) => {
@@ -242,7 +258,7 @@ export const Dashboard = () => {
 
   const resetChat = () => {
     setChatMessages([]);
-    sessionStorage.removeItem(CHAT_KEY);
+    saveChatToSession([]);
   };
 
   const pieData = useMemo(() => {
@@ -397,7 +413,7 @@ export const Dashboard = () => {
             {chatMessages.map((msg) => (
               <div key={msg.id} className={msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
                 <div className={msg.role === 'user' ? 'bg-blue-100 rounded-2xl px-3 py-2 max-w-[85%] text-sm' : 'bg-slate-100 rounded-2xl px-3 py-2 max-w-[85%] text-sm'}>
-                  <p className={msg.collapsed ? 'line-clamp-2' : ''}>{msg.text}</p>
+                  <p>{msg.collapsed && msg.text.length > 180 ? `${msg.text.slice(0, 180)}...` : msg.text}</p>
                   <button onClick={() => toggleMessage(msg.id)} className="text-xs text-slate-500 underline mt-1">
                     {msg.collapsed ? 'Expand' : 'Collapse'}
                   </button>

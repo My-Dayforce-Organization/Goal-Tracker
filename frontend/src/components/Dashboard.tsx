@@ -133,7 +133,7 @@ export const Dashboard = () => {
   }, [showCongrats]);
 
   const patchDraft = (milestoneId: string, key: keyof MilestoneDraft, value: string | number) => {
-    setDrafts((prev) => ({
+    setDrafts((prev: Record<string, MilestoneDraft>) => ({
       ...prev,
       [milestoneId]: {
         ...prev[milestoneId],
@@ -144,7 +144,7 @@ export const Dashboard = () => {
 
   const patchProgress = (milestoneId: string, value: number) => {
     const status = value >= 100 ? 'completed' : value <= 0 ? 'not_started' : 'in_progress';
-    setDrafts((prev) => ({
+    setDrafts((prev: Record<string, MilestoneDraft>) => ({
       ...prev,
       [milestoneId]: {
         ...prev[milestoneId],
@@ -216,27 +216,27 @@ export const Dashboard = () => {
 
   const answerQuestion = (question: string): string => {
     const q = question.toLowerCase();
-    const completed = milestones.filter((m) => m.status === 'completed');
-    const overdue = milestones.filter((m) => m.status === 'overdue');
-    const pending = milestones.filter((m) => m.status !== 'completed');
+    const completed = milestones.filter((m: Milestone) => m.status === 'completed');
+    const overdue = milestones.filter((m: Milestone) => m.status === 'overdue');
+    const pending = milestones.filter((m: Milestone) => m.status !== 'completed');
 
     if (q.includes('status')) {
-      return milestones.map((m) => `${m.title}: ${m.status.replaceAll('_', ' ')}`).join(' | ');
+      return milestones.map((m: Milestone) => `${m.title}: ${m.status.replaceAll('_', ' ')}`).join(' | ');
     }
     if (q.includes('description')) {
-      return milestones.map((m) => `${m.title}: ${m.description || 'No description'}`).join(' | ');
+      return milestones.map((m: Milestone) => `${m.title}: ${m.description || 'No description'}`).join(' | ');
     }
     if (q.includes('due') || q.includes('date')) {
-      return milestones.map((m) => `${m.title}: ${new Date(m.due_date).toLocaleDateString()}`).join(' | ');
+      return milestones.map((m: Milestone) => `${m.title}: ${new Date(m.due_date).toLocaleDateString()}`).join(' | ');
     }
     if (q.includes('pending')) {
-      return pending.length ? `Pending actions: ${pending.map((m) => m.title).join(', ')}` : 'No pending actions.';
+      return pending.length ? `Pending actions: ${pending.map((m: Milestone) => m.title).join(', ')}` : 'No pending actions.';
     }
     if (q.includes('overdue')) {
-      return overdue.length ? `Overdue milestones: ${overdue.map((m) => m.title).join(', ')}` : 'No overdue milestones.';
+      return overdue.length ? `Overdue milestones: ${overdue.map((m: Milestone) => m.title).join(', ')}` : 'No overdue milestones.';
     }
     if (q.includes('completed')) {
-      return completed.length ? `Completed milestones: ${completed.map((m) => m.title).join(', ')}` : 'No completed milestones yet.';
+      return completed.length ? `Completed milestones: ${completed.map((m: Milestone) => m.title).join(', ')}` : 'No completed milestones yet.';
     }
 
     return `Summary — Total: ${dashboard?.total_milestones ?? milestones.length}, Completed: ${completed.length}, Overdue: ${overdue.length}, Avg Progress: ${dashboard?.average_progress ?? 0}%.`;
@@ -247,23 +247,23 @@ export const Dashboard = () => {
     const question = chatInput.trim();
     if (!question) return;
 
-    setChatMessages((prev) => [...prev, { id: `u-${Date.now()}`, role: 'user', text: question, collapsed: false }]);
+    setChatMessages((prev: ChatMessage[]) => [...prev, { id: `u-${Date.now()}`, role: 'user', text: question, collapsed: false }]);
 
     const maybeUpdate = question.toLowerCase().includes('update') || question.includes('%') || question.toLowerCase().includes('milestone');
     if (maybeUpdate) {
       const ok = await sendNlUpdate(question);
       const answer = ok ? 'Done. I updated the milestone and refreshed the dashboard.' : 'I could not process that update. Try rephrasing.';
-      setChatMessages((prev) => [...prev, { id: `a-${Date.now()}`, role: 'assistant', text: answer, collapsed: true }]);
+      setChatMessages((prev: ChatMessage[]) => [...prev, { id: `a-${Date.now()}`, role: 'assistant', text: answer, collapsed: true }]);
       setNotice(ok ? 'Natural language update applied.' : 'Natural language update failed.');
     } else {
-      setChatMessages((prev) => [...prev, { id: `a-${Date.now()}`, role: 'assistant', text: answerQuestion(question), collapsed: true }]);
+      setChatMessages((prev: ChatMessage[]) => [...prev, { id: `a-${Date.now()}`, role: 'assistant', text: answerQuestion(question), collapsed: true }]);
     }
 
     setChatInput('');
   };
 
   const toggleChatMessage = (id: string) => {
-    setChatMessages((prev) => prev.map((m) => (m.id === id ? { ...m, collapsed: !m.collapsed } : m)));
+    setChatMessages((prev: ChatMessage[]) => prev.map((m: ChatMessage) => (m.id === id ? { ...m, collapsed: !m.collapsed } : m)));
   };
 
   const resetChat = () => {
@@ -322,7 +322,7 @@ export const Dashboard = () => {
           <ResponsiveContainer width="100%" height="90%">
             <PieChart>
               <Pie data={pieData} cx="50%" cy="50%" outerRadius={80} dataKey="value">
-                {pieData.map((_, index) => <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />)}
+                {pieData.map((_: { name: string; value: number }, index: number) => <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />)}
               </Pie>
               <Tooltip />
             </PieChart>

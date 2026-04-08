@@ -1,0 +1,1270 @@
+{
+  "users": [
+    {
+      "id": "u_mgr_1",
+      "name": "Morgan Lee",
+      "email": "manager@example.com",
+      "role": "manager",
+      "manager_id": null,
+      "password": "password123"
+    },
+    {
+      "id": "u_emp_1",
+      "name": "Avery Johnson",
+      "email": "employee1@example.com",
+      "role": "employee",
+      "manager_id": "u_mgr_1",
+      "password": "password123"
+    },
+    {
+      "id": "u_emp_2",
+      "name": "Riley Chen",
+      "email": "employee2@example.com",
+      "role": "employee",
+      "manager_id": "u_mgr_1",
+      "password": "password123"
+    }
+  ],
+  "milestones": [
+    {
+      "id": "m_emp1_1",
+      "user_id": "u_emp_1",
+      "title": "Launch onboarding revamp",
+      "description": "This project is focused on improving the technical onboarding experience for new projects by standardizing documentation, setup processes, and development workflows. It aims to reduce ramp-up time for engineers by providing clear, structured guides on architecture, environments, dependencies, and deployment procedures. The initiative includes consolidating scattered documentation, introducing step-by-step setup instructions, and ensuring consistency across repositories, enabling teams to quickly understand, contribute to, and maintain the project with minimal friction.",
+      "due_date": "2026-04-15T00:00:00Z",
+      "progress": 100,
+      "status": "completed",
+      "approved": false,
+      "created_at": "2026-04-01T12:28:49.857581Z",
+      "updated_at": "2026-04-08T13:26:06.486771Z"
+    },
+    {
+      "id": "m_emp1_2",
+      "user_id": "u_emp_1",
+      "title": "Complete Q2 certification",
+      "description": "Submit all learning modules",
+      "due_date": "2026-03-29T00:00:00Z",
+      "progress": 100,
+      "status": "completed",
+      "approved": false,
+      "created_at": "2026-04-01T12:28:49.857581Z",
+      "updated_at": "2026-04-01T14:32:23.308152Z"
+    },
+    {
+      "id": "m_emp2_1",
+      "user_id": "u_emp_2",
+      "title": "Ship analytics dashboard",
+      "description": "Deploy v1 with usage KPIs",
+      "due_date": "2026-04-22T12:28:49.857581Z",
+      "progress": 55,
+      "status": "in_progress",
+      "approved": false,
+      "created_at": "2026-04-01T12:28:49.857581Z",
+      "updated_at": "2026-04-01T12:28:49.857581Z"
+    },
+    {
+      "id": "m_805040e317",
+      "user_id": "u_emp_1",
+      "title": "Create a milestone tracker app",
+      "description": "Created from demo UI",
+      "due_date": "2026-04-13T00:00:00Z",
+      "progress": 59,
+      "status": "in_progress",
+      "approved": false,
+      "created_at": "2026-04-01T12:57:15.757092Z",
+      "updated_at": "2026-04-02T09:21:32.085315Z"
+    }
+  ],
+  "nl_events": [
+    {
+      "id": "e_c7932acefe",
+      "user_id": "u_emp_1",
+      "client_event_id": "ui-1775048097039",
+      "text": "Update milestone m_emp1_3 to 65%",
+      "parsed_progress_delta": 65,
+      "parsed_milestone_id": "m_emp1_3",
+      "created_at": "2026-04-01T12:54:57.959725Z"
+    },
+    {
+      "id": "e_a31dd7206e",
+      "user_id": "u_emp_1",
+      "client_event_id": "ui-1775048106487",
+      "text": "Update milestone m_emp1_3 to 45%",
+      "parsed_progress_delta": 45,
+      "parsed_milestone_id": "m_emp1_3",
+      "created_at": "2026-04-01T12:55:07.221604Z"
+    },
+    {
+      "id": "e_45efe24cba",
+      "user_id": "u_emp_1",
+      "client_event_id": "ui-1775048116948",
+      "text": "Update milestone m_emp3_3 to 45%",
+      "parsed_progress_delta": 45,
+      "parsed_milestone_id": "m_emp3_3",
+      "created_at": "2026-04-01T12:55:17.704671Z"
+    },
+    {
+      "id": "e_96b7b86fb4",
+      "user_id": "u_emp_1",
+      "client_event_id": "ui-1775048369184",
+      "text": "update status of Create a milestone tracker app to completed",
+      "parsed_progress_delta": 0,
+      "parsed_milestone_id": "tracker",
+      "created_at": "2026-04-01T12:59:30.547978Z"
+    },
+    {
+      "id": "e_45a8b99dc4",
+      "user_id": "u_emp_1",
+      "client_event_id": "ui-1775048372464",
+      "text": "update status of Create a milestone tracker app to completed",
+      "parsed_progress_delta": 0,
+      "parsed_milestone_id": "tracker",
+      "created_at": "2026-04-01T12:59:33.302544Z"
+    },
+    {
+      "id": "e_eed07474e8",
+      "user_id": "u_emp_1",
+      "client_event_id": "ui-1775048375623",
+      "text": "update status of Create a milestone tracker app to completed",
+      "parsed_progress_delta": 0,
+      "parsed_milestone_id": "tracker",
+      "created_at": "2026-04-01T12:59:36.359094Z"
+    },
+    {
+      "id": "e_d853371752",
+      "user_id": "u_emp_1",
+      "client_event_id": "ui-1775049103104",
+      "text": "update status of Create a milestone tracker app to completed",
+      "parsed_progress_delta": 0,
+      "parsed_milestone_id": "tracker",
+      "created_at": "2026-04-01T13:11:44.471097Z"
+    },
+    {
+      "id": "e_328c63c915",
+      "user_id": "u_emp_1",
+      "client_event_id": "ui-1775051361190",
+      "text": "update status of Launch onboarding revamp to completed",
+      "parsed_progress_delta": 0,
+      "parsed_milestone_id": null,
+      "created_at": "2026-04-01T13:49:22.004852Z"
+    },
+    {
+      "id": "e_e7aa52fb1a",
+      "user_id": "u_emp_1",
+      "client_event_id": "ui-1775051655596",
+      "text": "update status of Create a milestone tracker app to 25 %",
+      "parsed_progress_delta": 25,
+      "parsed_milestone_id": "tracker",
+      "created_at": "2026-04-01T13:54:16.943421Z"
+    },
+    {
+      "id": "e_36f39f5ffd",
+      "user_id": "u_emp_1",
+      "client_event_id": "ui-1775053942421",
+      "text": "I have completed the second milestone",
+      "parsed_progress_delta": 100,
+      "parsed_milestone_id": null,
+      "created_at": "2026-04-01T14:32:23.310507Z"
+    },
+    {
+      "id": "e_bb6aea3d6c",
+      "user_id": "u_emp_1",
+      "client_event_id": "ui-1775121691490",
+      "text": "update status of third milestone to in progress 59% ",
+      "parsed_progress_delta": 59,
+      "parsed_milestone_id": "to",
+      "created_at": "2026-04-02T09:21:32.087726Z"
+    },
+    {
+      "id": "e_3138e5f5ad",
+      "user_id": "u_emp_1",
+      "client_event_id": "ui-1775650769546",
+      "text": "update status of Launch onboarding revamp to in progress",
+      "parsed_progress_delta": 0,
+      "parsed_milestone_id": null,
+      "created_at": "2026-04-08T12:19:29.088901Z"
+    },
+    {
+      "id": "e_31b4dd6792",
+      "user_id": "u_emp_1",
+      "client_event_id": "ui-1775650776867",
+      "text": "update status of Launch onboarding revamp to in progress 90%",
+      "parsed_progress_delta": 90,
+      "parsed_milestone_id": null,
+      "created_at": "2026-04-08T12:19:36.429679Z"
+    },
+    {
+      "id": "e_5b9c53bca3",
+      "user_id": "u_emp_1",
+      "client_event_id": "ui-1775650795035",
+      "text": "update status of Launch onboarding revamp to in progress 90%",
+      "parsed_progress_delta": 90,
+      "parsed_milestone_id": null,
+      "created_at": "2026-04-08T12:19:54.608784Z"
+    },
+    {
+      "id": "e_27e5da6d54",
+      "user_id": "u_emp_1",
+      "client_event_id": "ui-1775650816459",
+      "text": "how much work do I have pending in task 3?",
+      "parsed_progress_delta": 0,
+      "parsed_milestone_id": null,
+      "created_at": "2026-04-08T12:20:15.997425Z"
+    },
+    {
+      "id": "e_29a917cea6",
+      "user_id": "u_emp_1",
+      "client_event_id": "ui-1775651430400",
+      "text": "what is the latest update on task 3?",
+      "parsed_progress_delta": 0,
+      "parsed_milestone_id": null,
+      "created_at": "2026-04-08T12:30:29.948662Z"
+    },
+    {
+      "id": "e_215bb5b0c2",
+      "user_id": "u_emp_1",
+      "client_event_id": "ui-1775652482505",
+      "text": "share a summary of task 3",
+      "parsed_progress_delta": 0,
+      "parsed_milestone_id": null,
+      "created_at": "2026-04-08T12:48:02.152904Z"
+    },
+    {
+      "id": "e_dff855c226",
+      "user_id": "u_emp_1",
+      "client_event_id": "ui-1775652487179",
+      "text": "share a summary of task 3",
+      "parsed_progress_delta": 0,
+      "parsed_milestone_id": null,
+      "created_at": "2026-04-08T12:48:06.777479Z"
+    },
+    {
+      "id": "e_eeb8710c88",
+      "user_id": "u_emp_1",
+      "client_event_id": "ui-1775653881407",
+      "text": "update status of Launch onboarding revamp to completed",
+      "parsed_progress_delta": 100,
+      "parsed_milestone_id": null,
+      "created_at": "2026-04-08T13:11:21.059822Z"
+    },
+    {
+      "id": "e_ff5caca787",
+      "user_id": "u_emp_1",
+      "client_event_id": "ui-1775653898563",
+      "text": "update status of Launch onboarding revamp to in progress 58%",
+      "parsed_progress_delta": 58,
+      "parsed_milestone_id": null,
+      "created_at": "2026-04-08T13:11:38.272945Z"
+    },
+    {
+      "id": "e_383ea0ee36",
+      "user_id": "u_emp_1",
+      "client_event_id": "ui-1775654639341",
+      "text": "update status of Launch onboarding revamp to completed",
+      "parsed_progress_delta": 100,
+      "parsed_milestone_id": null,
+      "created_at": "2026-04-08T13:23:59.111225Z"
+    },
+    {
+      "id": "e_e0f75d990c",
+      "user_id": "u_emp_1",
+      "client_event_id": "ui-1775654763273",
+      "text": "what is the status of task 3?",
+      "parsed_progress_delta": 0,
+      "parsed_milestone_id": null,
+      "created_at": "2026-04-08T13:26:02.947917Z"
+    },
+    {
+      "id": "e_543a925e3f",
+      "user_id": "u_emp_1",
+      "client_event_id": "ui-1775654765078",
+      "text": "what is the status of task 3?",
+      "parsed_progress_delta": 0,
+      "parsed_milestone_id": null,
+      "created_at": "2026-04-08T13:26:04.764866Z"
+    },
+    {
+      "id": "e_7963d21f6d",
+      "user_id": "u_emp_1",
+      "client_event_id": "ui-1775654766796",
+      "text": "what is the status of task 3?",
+      "parsed_progress_delta": 0,
+      "parsed_milestone_id": null,
+      "created_at": "2026-04-08T13:26:06.491275Z"
+    }
+  ],
+  "feedback": [],
+  "notifications": [
+    {
+      "id": "n_7670f64550",
+      "user_id": "u_emp_1",
+      "type": "info",
+      "message": "NLP update processed for milestone 'Launch onboarding revamp'",
+      "read": false,
+      "created_at": "2026-04-01T12:54:57.960330Z"
+    },
+    {
+      "id": "n_8b18facc80",
+      "user_id": "u_emp_1",
+      "type": "info",
+      "message": "NLP update processed for milestone 'Launch onboarding revamp'",
+      "read": false,
+      "created_at": "2026-04-01T12:55:07.222190Z"
+    },
+    {
+      "id": "n_d5004b028a",
+      "user_id": "u_emp_1",
+      "type": "info",
+      "message": "NLP update processed for milestone 'Launch onboarding revamp'",
+      "read": false,
+      "created_at": "2026-04-01T12:55:17.705517Z"
+    },
+    {
+      "id": "n_e38d24cd3e",
+      "user_id": "u_emp_1",
+      "type": "info",
+      "message": "NLP update processed for milestone 'Launch onboarding revamp'",
+      "read": false,
+      "created_at": "2026-04-01T12:59:30.548910Z"
+    },
+    {
+      "id": "n_58f7f0a15c",
+      "user_id": "u_emp_1",
+      "type": "info",
+      "message": "NLP update processed for milestone 'Launch onboarding revamp'",
+      "read": false,
+      "created_at": "2026-04-01T12:59:33.303225Z"
+    },
+    {
+      "id": "n_07a3384d32",
+      "user_id": "u_emp_1",
+      "type": "info",
+      "message": "NLP update processed for milestone 'Launch onboarding revamp'",
+      "read": false,
+      "created_at": "2026-04-01T12:59:36.360279Z"
+    },
+    {
+      "id": "n_776ee30ac3",
+      "user_id": "u_emp_1",
+      "type": "info",
+      "message": "NLP update processed for milestone 'Launch onboarding revamp'",
+      "read": false,
+      "created_at": "2026-04-01T13:11:44.471872Z"
+    },
+    {
+      "id": "n_ef589b4e5e",
+      "user_id": "u_emp_1",
+      "type": "info",
+      "message": "NLP update processed for milestone 'Launch onboarding revamp'",
+      "read": false,
+      "created_at": "2026-04-01T13:49:22.006317Z"
+    },
+    {
+      "id": "n_e588baf7f7",
+      "user_id": "u_emp_1",
+      "type": "info",
+      "message": "NLP update processed for milestone 'Launch onboarding revamp'",
+      "read": false,
+      "created_at": "2026-04-01T13:54:16.944310Z"
+    },
+    {
+      "id": "n_2090b255a8",
+      "user_id": "u_emp_1",
+      "type": "info",
+      "message": "NLP update processed for milestone 'Complete Q2 certification'",
+      "read": false,
+      "created_at": "2026-04-01T14:32:23.311478Z"
+    },
+    {
+      "id": "n_ead7ddcaef",
+      "user_id": "u_emp_1",
+      "type": "info",
+      "message": "NLP update processed for milestone 'Create a milestone tracker app'",
+      "read": false,
+      "created_at": "2026-04-02T09:21:32.088703Z"
+    },
+    {
+      "id": "n_8dd557376e",
+      "user_id": "u_emp_1",
+      "type": "info",
+      "message": "NLP update processed for milestone 'Launch onboarding revamp'",
+      "read": false,
+      "created_at": "2026-04-08T12:19:29.090322Z"
+    },
+    {
+      "id": "n_b8ec47d737",
+      "user_id": "u_emp_1",
+      "type": "info",
+      "message": "NLP update processed for milestone 'Launch onboarding revamp'",
+      "read": false,
+      "created_at": "2026-04-08T12:19:36.430648Z"
+    },
+    {
+      "id": "n_1d42d16461",
+      "user_id": "u_emp_1",
+      "type": "info",
+      "message": "NLP update processed for milestone 'Launch onboarding revamp'",
+      "read": false,
+      "created_at": "2026-04-08T12:19:54.609947Z"
+    },
+    {
+      "id": "n_95caf6cbfc",
+      "user_id": "u_emp_1",
+      "type": "info",
+      "message": "NLP update processed for milestone 'Launch onboarding revamp'",
+      "read": false,
+      "created_at": "2026-04-08T12:20:15.998464Z"
+    },
+    {
+      "id": "n_4b7eae00c4",
+      "user_id": "u_emp_1",
+      "type": "info",
+      "message": "NLP update processed for milestone 'Launch onboarding revamp'",
+      "read": false,
+      "created_at": "2026-04-08T12:30:29.949878Z"
+    },
+    {
+      "id": "n_7868b21738",
+      "user_id": "u_emp_1",
+      "type": "info",
+      "message": "NLP update processed for milestone 'Launch onboarding revamp'",
+      "read": false,
+      "created_at": "2026-04-08T12:48:02.153974Z"
+    },
+    {
+      "id": "n_c12e5afee4",
+      "user_id": "u_emp_1",
+      "type": "info",
+      "message": "NLP update processed for milestone 'Launch onboarding revamp'",
+      "read": false,
+      "created_at": "2026-04-08T12:48:06.778575Z"
+    },
+    {
+      "id": "n_9f00f7ceba",
+      "user_id": "u_emp_1",
+      "type": "info",
+      "message": "NLP update processed for milestone 'Launch onboarding revamp'",
+      "read": false,
+      "created_at": "2026-04-08T13:11:21.061060Z"
+    },
+    {
+      "id": "n_be2265c522",
+      "user_id": "u_emp_1",
+      "type": "info",
+      "message": "NLP update processed for milestone 'Launch onboarding revamp'",
+      "read": false,
+      "created_at": "2026-04-08T13:11:38.274109Z"
+    },
+    {
+      "id": "n_17c0971a9a",
+      "user_id": "u_emp_1",
+      "type": "info",
+      "message": "NLP update processed for milestone 'Launch onboarding revamp'",
+      "read": false,
+      "created_at": "2026-04-08T13:23:59.112627Z"
+    },
+    {
+      "id": "n_4448be0d74",
+      "user_id": "u_emp_1",
+      "type": "info",
+      "message": "NLP update processed for milestone 'Launch onboarding revamp'",
+      "read": false,
+      "created_at": "2026-04-08T13:26:02.949188Z"
+    },
+    {
+      "id": "n_4ef55a6cff",
+      "user_id": "u_emp_1",
+      "type": "info",
+      "message": "NLP update processed for milestone 'Launch onboarding revamp'",
+      "read": false,
+      "created_at": "2026-04-08T13:26:04.766224Z"
+    },
+    {
+      "id": "n_8b2283d8b6",
+      "user_id": "u_emp_1",
+      "type": "info",
+      "message": "NLP update processed for milestone 'Launch onboarding revamp'",
+      "read": false,
+      "created_at": "2026-04-08T13:26:06.493445Z"
+    }
+  ],
+  "audit_logs": [
+    {
+      "id": "a_6cf9daed8e",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.create",
+      "entity_type": "milestone",
+      "entity_id": "m_6dbf1c8961",
+      "metadata": {},
+      "created_at": "2026-04-01T12:29:26.102528Z"
+    },
+    {
+      "id": "a_5ebd67aee3",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_6dbf1c8961",
+      "metadata": {},
+      "created_at": "2026-04-01T12:30:00.628642Z"
+    },
+    {
+      "id": "a_24369d9ac5",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-01T12:30:18.676886Z"
+    },
+    {
+      "id": "a_071c4a7d07",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_2",
+      "metadata": {},
+      "created_at": "2026-04-01T12:30:24.619253Z"
+    },
+    {
+      "id": "a_bcc858b5d3",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-01T12:31:30.320354Z"
+    },
+    {
+      "id": "a_6c66ea9f39",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_6dbf1c8961",
+      "metadata": {},
+      "created_at": "2026-04-01T12:38:11.886940Z"
+    },
+    {
+      "id": "a_b440c3a702",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_6dbf1c8961",
+      "metadata": {},
+      "created_at": "2026-04-01T12:38:32.925026Z"
+    },
+    {
+      "id": "a_95f386f1a6",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_6dbf1c8961",
+      "metadata": {},
+      "created_at": "2026-04-01T12:54:26.593113Z"
+    },
+    {
+      "id": "a_74f6b93e46",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-01T12:54:57.959085Z"
+    },
+    {
+      "id": "a_7ccd25ba00",
+      "actor_user_id": "u_emp_1",
+      "action": "nl.ingest",
+      "entity_type": "nl_event",
+      "entity_id": "e_c7932acefe",
+      "metadata": {
+        "client_event_id": "ui-1775048097039"
+      },
+      "created_at": "2026-04-01T12:54:57.960979Z"
+    },
+    {
+      "id": "a_533d55e6b8",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-01T12:55:07.221084Z"
+    },
+    {
+      "id": "a_b6e75c8e5c",
+      "actor_user_id": "u_emp_1",
+      "action": "nl.ingest",
+      "entity_type": "nl_event",
+      "entity_id": "e_a31dd7206e",
+      "metadata": {
+        "client_event_id": "ui-1775048106487"
+      },
+      "created_at": "2026-04-01T12:55:07.222702Z"
+    },
+    {
+      "id": "a_0a02798215",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-01T12:55:17.703719Z"
+    },
+    {
+      "id": "a_41a7ae3eb3",
+      "actor_user_id": "u_emp_1",
+      "action": "nl.ingest",
+      "entity_type": "nl_event",
+      "entity_id": "e_45efe24cba",
+      "metadata": {
+        "client_event_id": "ui-1775048116948"
+      },
+      "created_at": "2026-04-01T12:55:17.706361Z"
+    },
+    {
+      "id": "a_f1ba266bfd",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.delete",
+      "entity_type": "milestone",
+      "entity_id": "m_6dbf1c8961",
+      "metadata": {},
+      "created_at": "2026-04-01T12:55:52.569017Z"
+    },
+    {
+      "id": "a_605c9b7263",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.create",
+      "entity_type": "milestone",
+      "entity_id": "m_3dbff15fe3",
+      "metadata": {},
+      "created_at": "2026-04-01T12:56:08.849256Z"
+    },
+    {
+      "id": "a_e7f10b480e",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.delete",
+      "entity_type": "milestone",
+      "entity_id": "m_3dbff15fe3",
+      "metadata": {},
+      "created_at": "2026-04-01T12:56:13.220865Z"
+    },
+    {
+      "id": "a_c75b1ce9ed",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.create",
+      "entity_type": "milestone",
+      "entity_id": "m_08cbfbf154",
+      "metadata": {},
+      "created_at": "2026-04-01T12:56:32.906823Z"
+    },
+    {
+      "id": "a_0e2586abb4",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.delete",
+      "entity_type": "milestone",
+      "entity_id": "m_08cbfbf154",
+      "metadata": {},
+      "created_at": "2026-04-01T12:57:03.284181Z"
+    },
+    {
+      "id": "a_b2fbeb9958",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.create",
+      "entity_type": "milestone",
+      "entity_id": "m_805040e317",
+      "metadata": {},
+      "created_at": "2026-04-01T12:57:15.758738Z"
+    },
+    {
+      "id": "a_20a61c4908",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_805040e317",
+      "metadata": {},
+      "created_at": "2026-04-01T12:57:27.522798Z"
+    },
+    {
+      "id": "a_fa67a93194",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-01T12:59:30.547180Z"
+    },
+    {
+      "id": "a_72927ffd61",
+      "actor_user_id": "u_emp_1",
+      "action": "nl.ingest",
+      "entity_type": "nl_event",
+      "entity_id": "e_96b7b86fb4",
+      "metadata": {
+        "client_event_id": "ui-1775048369184"
+      },
+      "created_at": "2026-04-01T12:59:30.550087Z"
+    },
+    {
+      "id": "a_da98dcd477",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-01T12:59:33.301865Z"
+    },
+    {
+      "id": "a_5513d169c5",
+      "actor_user_id": "u_emp_1",
+      "action": "nl.ingest",
+      "entity_type": "nl_event",
+      "entity_id": "e_45a8b99dc4",
+      "metadata": {
+        "client_event_id": "ui-1775048372464"
+      },
+      "created_at": "2026-04-01T12:59:33.303918Z"
+    },
+    {
+      "id": "a_712e513ffc",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-01T12:59:36.357835Z"
+    },
+    {
+      "id": "a_3f5757daed",
+      "actor_user_id": "u_emp_1",
+      "action": "nl.ingest",
+      "entity_type": "nl_event",
+      "entity_id": "e_eed07474e8",
+      "metadata": {
+        "client_event_id": "ui-1775048375623"
+      },
+      "created_at": "2026-04-01T12:59:36.361475Z"
+    },
+    {
+      "id": "a_755ed48a26",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-01T13:11:44.470313Z"
+    },
+    {
+      "id": "a_87af9ab5e4",
+      "actor_user_id": "u_emp_1",
+      "action": "nl.ingest",
+      "entity_type": "nl_event",
+      "entity_id": "e_d853371752",
+      "metadata": {
+        "client_event_id": "ui-1775049103104"
+      },
+      "created_at": "2026-04-01T13:11:44.472666Z"
+    },
+    {
+      "id": "a_341e465680",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_805040e317",
+      "metadata": {},
+      "created_at": "2026-04-01T13:11:46.132511Z"
+    },
+    {
+      "id": "a_12c245dec9",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-01T13:49:22.003681Z"
+    },
+    {
+      "id": "a_cfbf1d93b6",
+      "actor_user_id": "u_emp_1",
+      "action": "nl.ingest",
+      "entity_type": "nl_event",
+      "entity_id": "e_328c63c915",
+      "metadata": {
+        "client_event_id": "ui-1775051361190"
+      },
+      "created_at": "2026-04-01T13:49:22.008175Z"
+    },
+    {
+      "id": "a_b699062a5a",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_2",
+      "metadata": {},
+      "created_at": "2026-04-01T13:50:06.401161Z"
+    },
+    {
+      "id": "a_f19162a111",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-01T13:50:17.073164Z"
+    },
+    {
+      "id": "a_f409a359de",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_805040e317",
+      "metadata": {},
+      "created_at": "2026-04-01T13:50:31.678794Z"
+    },
+    {
+      "id": "a_52095bb443",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-01T13:54:16.942299Z"
+    },
+    {
+      "id": "a_2b4f4c0d8b",
+      "actor_user_id": "u_emp_1",
+      "action": "nl.ingest",
+      "entity_type": "nl_event",
+      "entity_id": "e_e7aa52fb1a",
+      "metadata": {
+        "client_event_id": "ui-1775051655596"
+      },
+      "created_at": "2026-04-01T13:54:16.945230Z"
+    },
+    {
+      "id": "a_81d5911958",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-01T13:55:29.151447Z"
+    },
+    {
+      "id": "a_8116b9acfb",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-01T13:55:37.934871Z"
+    },
+    {
+      "id": "a_c7cdccf6ad",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-01T13:56:11.182205Z"
+    },
+    {
+      "id": "a_689c1e0059",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-01T14:31:09.031348Z"
+    },
+    {
+      "id": "a_21eede7f51",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-01T14:31:15.653578Z"
+    },
+    {
+      "id": "a_c7fbe2ebc5",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_805040e317",
+      "metadata": {},
+      "created_at": "2026-04-01T14:32:06.391715Z"
+    },
+    {
+      "id": "a_c3bd67c63a",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_2",
+      "metadata": {},
+      "created_at": "2026-04-01T14:32:23.309389Z"
+    },
+    {
+      "id": "a_c8d24a6bbe",
+      "actor_user_id": "u_emp_1",
+      "action": "nl.ingest",
+      "entity_type": "nl_event",
+      "entity_id": "e_36f39f5ffd",
+      "metadata": {
+        "client_event_id": "ui-1775053942421"
+      },
+      "created_at": "2026-04-01T14:32:23.312469Z"
+    },
+    {
+      "id": "a_2f7a3a1755",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.create",
+      "entity_type": "milestone",
+      "entity_id": "m_ebe10eaf68",
+      "metadata": {},
+      "created_at": "2026-04-02T09:19:39.774475Z"
+    },
+    {
+      "id": "a_88ce893936",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_ebe10eaf68",
+      "metadata": {},
+      "created_at": "2026-04-02T09:20:01.899040Z"
+    },
+    {
+      "id": "a_a46e8149a0",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_ebe10eaf68",
+      "metadata": {},
+      "created_at": "2026-04-02T09:20:43.195193Z"
+    },
+    {
+      "id": "a_754f32e284",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_ebe10eaf68",
+      "metadata": {},
+      "created_at": "2026-04-02T09:20:50.269675Z"
+    },
+    {
+      "id": "a_c1413f5c7c",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.delete",
+      "entity_type": "milestone",
+      "entity_id": "m_ebe10eaf68",
+      "metadata": {},
+      "created_at": "2026-04-02T09:20:59.085812Z"
+    },
+    {
+      "id": "a_108ea07cfd",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_805040e317",
+      "metadata": {},
+      "created_at": "2026-04-02T09:21:32.086514Z"
+    },
+    {
+      "id": "a_2df13b41fd",
+      "actor_user_id": "u_emp_1",
+      "action": "nl.ingest",
+      "entity_type": "nl_event",
+      "entity_id": "e_bb6aea3d6c",
+      "metadata": {
+        "client_event_id": "ui-1775121691490"
+      },
+      "created_at": "2026-04-02T09:21:32.089742Z"
+    },
+    {
+      "id": "a_e78862e70c",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-08T12:02:22.233320Z"
+    },
+    {
+      "id": "a_25259d0ecb",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-08T12:19:29.087258Z"
+    },
+    {
+      "id": "a_9fa2d5a480",
+      "actor_user_id": "u_emp_1",
+      "action": "nl.ingest",
+      "entity_type": "nl_event",
+      "entity_id": "e_3138e5f5ad",
+      "metadata": {
+        "client_event_id": "ui-1775650769546"
+      },
+      "created_at": "2026-04-08T12:19:29.091709Z"
+    },
+    {
+      "id": "a_3cbf8d3985",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-08T12:19:36.428717Z"
+    },
+    {
+      "id": "a_4e24cf4f0c",
+      "actor_user_id": "u_emp_1",
+      "action": "nl.ingest",
+      "entity_type": "nl_event",
+      "entity_id": "e_31b4dd6792",
+      "metadata": {
+        "client_event_id": "ui-1775650776867"
+      },
+      "created_at": "2026-04-08T12:19:36.431604Z"
+    },
+    {
+      "id": "a_44d94d2773",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-08T12:19:54.607708Z"
+    },
+    {
+      "id": "a_3507117065",
+      "actor_user_id": "u_emp_1",
+      "action": "nl.ingest",
+      "entity_type": "nl_event",
+      "entity_id": "e_5b9c53bca3",
+      "metadata": {
+        "client_event_id": "ui-1775650795035"
+      },
+      "created_at": "2026-04-08T12:19:54.611144Z"
+    },
+    {
+      "id": "a_10ec7466bf",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-08T12:20:15.996382Z"
+    },
+    {
+      "id": "a_cba3f9e1de",
+      "actor_user_id": "u_emp_1",
+      "action": "nl.ingest",
+      "entity_type": "nl_event",
+      "entity_id": "e_27e5da6d54",
+      "metadata": {
+        "client_event_id": "ui-1775650816459"
+      },
+      "created_at": "2026-04-08T12:20:15.999512Z"
+    },
+    {
+      "id": "a_e3dfce2f45",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-08T12:30:29.947460Z"
+    },
+    {
+      "id": "a_472d0955d6",
+      "actor_user_id": "u_emp_1",
+      "action": "nl.ingest",
+      "entity_type": "nl_event",
+      "entity_id": "e_29a917cea6",
+      "metadata": {
+        "client_event_id": "ui-1775651430400"
+      },
+      "created_at": "2026-04-08T12:30:29.951048Z"
+    },
+    {
+      "id": "a_12f9a95dda",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-08T12:48:02.151777Z"
+    },
+    {
+      "id": "a_39bcc17322",
+      "actor_user_id": "u_emp_1",
+      "action": "nl.ingest",
+      "entity_type": "nl_event",
+      "entity_id": "e_215bb5b0c2",
+      "metadata": {
+        "client_event_id": "ui-1775652482505"
+      },
+      "created_at": "2026-04-08T12:48:02.155051Z"
+    },
+    {
+      "id": "a_056518f4ec",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-08T12:48:06.776393Z"
+    },
+    {
+      "id": "a_cb3e09188f",
+      "actor_user_id": "u_emp_1",
+      "action": "nl.ingest",
+      "entity_type": "nl_event",
+      "entity_id": "e_dff855c226",
+      "metadata": {
+        "client_event_id": "ui-1775652487179"
+      },
+      "created_at": "2026-04-08T12:48:06.779701Z"
+    },
+    {
+      "id": "a_d4b596aa7b",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-08T13:11:21.058586Z"
+    },
+    {
+      "id": "a_0ab42cabf6",
+      "actor_user_id": "u_emp_1",
+      "action": "nl.ingest",
+      "entity_type": "nl_event",
+      "entity_id": "e_eeb8710c88",
+      "metadata": {
+        "client_event_id": "ui-1775653881407"
+      },
+      "created_at": "2026-04-08T13:11:21.062468Z"
+    },
+    {
+      "id": "a_2eb872ac3a",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-08T13:11:38.271751Z"
+    },
+    {
+      "id": "a_57669dcc47",
+      "actor_user_id": "u_emp_1",
+      "action": "nl.ingest",
+      "entity_type": "nl_event",
+      "entity_id": "e_ff5caca787",
+      "metadata": {
+        "client_event_id": "ui-1775653898563"
+      },
+      "created_at": "2026-04-08T13:11:38.275300Z"
+    },
+    {
+      "id": "a_2603589351",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-08T13:23:59.109181Z"
+    },
+    {
+      "id": "a_45823d4e56",
+      "actor_user_id": "u_emp_1",
+      "action": "nl.ingest",
+      "entity_type": "nl_event",
+      "entity_id": "e_383ea0ee36",
+      "metadata": {
+        "client_event_id": "ui-1775654639341"
+      },
+      "created_at": "2026-04-08T13:23:59.113872Z"
+    },
+    {
+      "id": "a_c8c2794cbd",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-08T13:26:02.946698Z"
+    },
+    {
+      "id": "a_371a9180e8",
+      "actor_user_id": "u_emp_1",
+      "action": "nl.ingest",
+      "entity_type": "nl_event",
+      "entity_id": "e_e0f75d990c",
+      "metadata": {
+        "client_event_id": "ui-1775654763273"
+      },
+      "created_at": "2026-04-08T13:26:02.950593Z"
+    },
+    {
+      "id": "a_7ae176d662",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-08T13:26:04.763522Z"
+    },
+    {
+      "id": "a_43af05bbe5",
+      "actor_user_id": "u_emp_1",
+      "action": "nl.ingest",
+      "entity_type": "nl_event",
+      "entity_id": "e_543a925e3f",
+      "metadata": {
+        "client_event_id": "ui-1775654765078"
+      },
+      "created_at": "2026-04-08T13:26:04.767552Z"
+    },
+    {
+      "id": "a_e80d4c31a6",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.update",
+      "entity_type": "milestone",
+      "entity_id": "m_emp1_1",
+      "metadata": {},
+      "created_at": "2026-04-08T13:26:06.489074Z"
+    },
+    {
+      "id": "a_13104c4105",
+      "actor_user_id": "u_emp_1",
+      "action": "nl.ingest",
+      "entity_type": "nl_event",
+      "entity_id": "e_7963d21f6d",
+      "metadata": {
+        "client_event_id": "ui-1775654766796"
+      },
+      "created_at": "2026-04-08T13:26:06.495477Z"
+    },
+    {
+      "id": "a_96685d9531",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.create",
+      "entity_type": "milestone",
+      "entity_id": "m_bb41f1e124",
+      "metadata": {},
+      "created_at": "2026-04-08T13:29:23.217649Z"
+    },
+    {
+      "id": "a_dcfa19cf8a",
+      "actor_user_id": "u_emp_1",
+      "action": "milestone.delete",
+      "entity_type": "milestone",
+      "entity_id": "m_bb41f1e124",
+      "metadata": {},
+      "created_at": "2026-04-08T13:29:31.934408Z"
+    }
+  ]
+}
